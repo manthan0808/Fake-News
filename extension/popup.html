@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeriScope Scanner</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <span class="brand-title">VeriScope</span>
+        <span class="brand-sub">PROOF DESK SCANNER</span>
+      </div>
+      <div class="status-indicator" id="serverStatus" title="Proof Desk API Connected">
+        <span class="status-dot"></span>
+        <span class="status-text">Ready</span>
+      </div>
+    </header>
+
+    <!-- Active Tab Info -->
+    <div class="active-tab-card">
+      <div class="meta-label">CURRENT TAB</div>
+      <div class="tab-domain" id="tabDomain">Detecting active page...</div>
+      <div class="tab-title" id="tabTitle">Loading page title...</div>
+    </div>
+
+    <!-- Initial State / Scan Trigger -->
+    <div id="initialView" class="view-panel">
+      <p class="scan-description">
+        Extracts headline, byline, and factual claims directly from the active DOM without copying URLs.
+      </p>
+      <button id="scanBtn" class="btn btn-primary w-full">
+        Scan Current Page
+      </button>
+      <div class="keyboard-hint">Cross-checks claims via live public knowledge bases</div>
+    </div>
+
+    <!-- Progress State -->
+    <div id="loadingView" class="view-panel hidden">
+      <div class="progress-container">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-step-text" id="progressStep">Initializing DOM extraction...</div>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div id="errorView" class="view-panel hidden">
+      <div class="error-box">
+        <div class="error-title">Scan Interrupted</div>
+        <div class="error-message" id="errorMessage">Could not communicate with the Proof Desk API. Ensure the backend server is running on port 5000.</div>
+      </div>
+      <button id="retryBtn" class="btn btn-secondary w-full" style="margin-top: 10px;">Retry Scan</button>
+    </div>
+
+    <!-- Results View -->
+    <div id="resultView" class="view-panel hidden">
+      <div class="results-header">
+        <div class="results-stats">
+          <span class="badge badge-verified" id="resVerifiedBadge">VERIFIED: 0</span>
+          <span class="badge badge-total" id="resTotalBadge">TOTAL: 0</span>
+        </div>
+        <div class="score-display">
+          <span class="score-num" id="resScore">--</span>
+          <span class="score-label">/100 Credibility</span>
+        </div>
+      </div>
+
+      <div class="claims-list-container">
+        <div class="claims-title">EXTRACTED CLAIMS</div>
+        <div id="claimsList" class="claims-list"></div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="openReportBtn" class="btn btn-primary w-full">
+          Open Full Proof Report ↗
+        </button>
+        <button id="highlightBtn" class="btn btn-secondary w-full" style="margin-top: 6px;">
+          Highlight Claims in Page
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

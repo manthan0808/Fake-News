@@ -1,0 +1,341 @@
+/* ================================================================
+   VeriScope Proof Desk — Extension Popup Styles
+   Aesthetic: Warm Off-White Editorial Utility (Inter, Charcoal, Muted Borders)
+   ================================================================ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  background-color: #faf9f5;
+  color: #1a1a1a;
+  width: 380px;
+  min-height: 480px;
+  padding: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.popup-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Header */
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e7e4dc;
+}
+
+.brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111;
+  display: block;
+}
+
+.brand-sub {
+  font-size: 9px;
+  font-family: monospace;
+  letter-spacing: 0.1em;
+  color: #78716c;
+  display: block;
+  margin-top: 2px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #15803d;
+  background: #f0fdf4;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: 1px solid #bbf7d0;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  background-color: #22c55e;
+  border-radius: 50%;
+}
+
+/* Active Tab Card */
+.active-tab-card {
+  background: #ffffff;
+  border: 1px solid #e7e4dc;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.meta-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #78716c;
+  margin-bottom: 4px;
+}
+
+.tab-domain {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1917;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab-title {
+  font-size: 11px;
+  color: #57534e;
+  line-height: 1.4;
+  margin-top: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* View Panels */
+.view-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.scan-description {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #57534e;
+  margin-bottom: 12px;
+}
+
+.keyboard-hint {
+  font-size: 10px;
+  color: #a8a29e;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #1c1917;
+  color: #ffffff;
+  border: 1px solid #1c1917;
+}
+
+.btn-primary:hover {
+  background: #292524;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: #1c1917;
+  border: 1px solid #d6d3d1;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f4;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* Progress State */
+.progress-container {
+  padding: 24px 8px;
+  text-align: center;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e7e4dc;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.progress-fill {
+  width: 25%;
+  height: 100%;
+  background: #1c1917;
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+.progress-step-text {
+  font-size: 12px;
+  color: #57534e;
+}
+
+/* Error State */
+.error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 12px;
+}
+
+.error-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #991b1b;
+  margin-bottom: 4px;
+}
+
+.error-message {
+  font-size: 11px;
+  color: #b91c1c;
+  line-height: 1.4;
+}
+
+/* Results View */
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e7e4dc;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.results-stats {
+  display: flex;
+  gap: 6px;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+}
+
+.badge-verified {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-total {
+  background: #f5f5f4;
+  color: #44403c;
+  border: 1px solid #e7e5e4;
+}
+
+.score-display {
+  text-align: right;
+}
+
+.score-num {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1c1917;
+}
+
+.score-label {
+  font-size: 9px;
+  color: #78716c;
+  display: block;
+}
+
+/* Claims List */
+.claims-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: #78716c;
+  margin-bottom: 6px;
+}
+
+.claims-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.claim-item {
+  background: #ffffff;
+  border: 1px solid #e7e4dc;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.claim-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.claim-status-pill {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.05em;
+}
+
+.claim-status-SUPPORTED {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.claim-status-CONTRADICTED {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.claim-status-MIXED {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.claim-status-UNVERIFIED {
+  background: #f5f5f4;
+  color: #57534e;
+  border: 1px solid #e7e5e4;
+}
+
+.claim-item-text {
+  font-size: 11px;
+  line-height: 1.4;
+  color: #292524;
+}

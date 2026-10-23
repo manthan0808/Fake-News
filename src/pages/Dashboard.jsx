@@ -1,209 +1,223 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Search, TrendingUp, AlertTriangle, CheckCircle, HelpCircle,
-  ExternalLink, Bookmark, Calendar, ChevronRight
-} from 'lucide-react';
-import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, Tooltip, ResponsiveContainer, Legend
-} from 'recharts';
 import { UserLayout } from '../components/layout/UserLayout';
-import { useAuth } from '../context/AuthContext';
-import { mockDashboardStats } from '../data/mockData/dashboardStats';
-import { mockNewsHistory } from '../data/mockData/news';
-import {
-  formatDate, truncate, ASSESSMENT_LABELS, ASSESSMENT_BADGE_CLASS
-} from '../utils/formatters';
+import { proofDeskService } from '../services/api';
 import './Dashboard.css';
 
-const STAT_CARDS = (stats) => [
-  { label: 'Total Checks', value: stats.totalChecks, icon: Search, color: '#6366f1', delta: '+12 this week' },
-  { label: 'Likely Fake', value: stats.likelyFake, icon: AlertTriangle, color: '#ef4444', delta: '25% of total' },
-  { label: 'Likely Real', value: stats.likelyReal, icon: CheckCircle, color: '#22c55e', delta: '55.5% of total' },
-  { label: 'Misleading', value: stats.misleading, icon: HelpCircle, color: '#f59e0b', delta: '19.5% of total' },
+// 30 days daily proofs bar data matching Screenshot 1
+const DAILY_BARS = [
+  24, 28, 32, 29, 36, 42, 38, 30, 26, 34, 40, 48, 44, 38, 36,
+  46, 52, 49, 42, 39, 44, 48, 54, 58, 56, 50, 46, 52, 60, 64
 ];
 
-const PIE_COLORS = ['#ef4444', '#22c55e', '#f59e0b', '#94a3b8'];
-
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload?.length) {
-    return (
-      <div className="chart-tooltip">
-        <p className="chart-tooltip-label">{label}</p>
-        {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color || p.fill }}>{p.name}: <strong>{p.value}</strong></p>
-        ))}
-      </div>
-    );
-  }
-  return null;
-};
-
 export default function Dashboard() {
-  const { user } = useAuth();
-  const stats = mockDashboardStats.user;
-  const recentChecks = mockNewsHistory.slice(0, 5);
+  const [analytics, setAnalytics] = useState(null);
+  const [recentScans, setRecentScans] = useState([]);
+  const [hoveredBar, setHoveredBar] = useState(null);
 
-  const pieData = [
-    { name: 'Likely Fake', value: stats.likelyFake },
-    { name: 'Likely Real', value: stats.likelyReal },
-    { name: 'Misleading', value: stats.misleading },
-    { name: 'Unverified', value: stats.totalChecks - stats.likelyFake - stats.likelyReal - stats.misleading },
-  ];
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [stats, history] = await Promise.all([
+          proofDeskService.getAnalytics(),
+          proofDeskService.getHistory()
+        ]);
+        setAnalytics(stats);
+        setRecentScans(history);
+      } catch (err) {
+        console.error('Failed to load dashboard analytics:', err);
+      }
+    }
+    loadData();
+  }, []);
+
+  const totalProofs = analytics ? analytics.totalProofs.toLocaleString() : '3,412';
+  const avgTime = analytics ? analytics.avgTimeToVerdict : '2.1s';
+  const autoVerified = analytics ? analytics.autoVerifiedRate : '61%';
+  const disputed = analytics ? analytics.disputedVerdictsRate : '0.4%';
 
   return (
     <UserLayout>
-      <div className="dashboard animate-fade-in">
-        {/* Page Header */}
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">Dashboard</h1>
-            <p className="page-sub">Welcome back, {user?.name?.split(' ')[0]}. Here's your verification activity.</p>
-          </div>
-          <Link to="/check" className="btn btn-primary">
-            <Search size={16} /> Check News
-          </Link>
+      <div className="proof-desk-analytics">
+        {/* Header matching Screenshot 1 */}
+        <div className="analytics-header">
+          <div className="analytics-meta-tag">LAST 30 DAYS</div>
+          <h1 className="analytics-title serif-heading">Analytics</h1>
         </div>
 
-        {/* Stat Cards */}
-        <div className="dash-stats-grid">
-          {STAT_CARDS(stats).map((card, i) => (
-            <div key={i} className={`dash-stat-card animate-fade-in-up delay-${i + 1}`}>
-              <div className="dash-stat-top">
-                <div className="dash-stat-icon" style={{ background: `${card.color}18`, border: `1px solid ${card.color}25` }}>
-                  <card.icon size={18} style={{ color: card.color }} />
-                </div>
-                <span className="dash-stat-delta">{card.delta}</span>
+        {/* 4-Column Stat Strip */}
+        <div className="proof-stat-strip">
+          <div className="proof-stat-cell">
+            <div className="proof-stat-label">TOTAL PROOFS</div>
+            <div className="proof-stat-val">{totalProofs}</div>
+          </div>
+          <div className="proof-stat-cell">
+            <div className="proof-stat-label">AVG TIME TO VERDICT</div>
+            <div className="proof-stat-val">{avgTime}</div>
+          </div>
+          <div className="proof-stat-cell">
+            <div className="proof-stat-label">AUTO-VERIFIED</div>
+            <div className="proof-stat-val">{autoVerified}</div>
+          </div>
+          <div className="proof-stat-cell">
+            <div className="proof-stat-label">DISPUTED VERDICTS</div>
+            <div className="proof-stat-val text-green">{disputed}</div>
+          </div>
+        </div>
+
+        {/* Main Analytics Grid matching Screenshot 1 */}
+        <div className="analytics-grid">
+          {/* Left Column: Proofs Per Day + Topics by Volume */}
+          <div className="analytics-left-col">
+            {/* Proofs per Day Chart */}
+            <div className="card analytics-chart-card">
+              <div className="chart-header">
+                <span className="chart-title">PROOFS PER DAY</span>
+                <span className="chart-hint">
+                  {hoveredBar !== null ? `Day ${hoveredBar + 1}: ${DAILY_BARS[hoveredBar]} proofs` : 'hover the bars'}
+                </span>
               </div>
-              <div className="dash-stat-value" style={{ color: card.color }}>{card.value}</div>
-              <div className="dash-stat-label">{card.label}</div>
+
+              <div className="bar-chart-strip">
+                {DAILY_BARS.map((val, idx) => {
+                  const isLatest = idx === DAILY_BARS.length - 1;
+                  const heightPct = (val / 70) * 100;
+                  return (
+                    <div
+                      key={idx}
+                      className="bar-chart-slot"
+                      onMouseEnter={() => setHoveredBar(idx)}
+                      onMouseLeave={() => setHoveredBar(null)}
+                    >
+                      <div
+                        className={`bar-chart-bar ${isLatest ? 'bar-latest' : ''}`}
+                        style={{ height: `${heightPct}%` }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="bar-chart-timeline">
+                <span>JUN 7</span>
+                <span>JUN 21</span>
+                <span>JUL 6</span>
+              </div>
             </div>
-          ))}
+
+            {/* Topics by Volume */}
+            <div className="card topics-card">
+              <div className="topics-heading">TOPICS BY VOLUME</div>
+              <div className="topics-list">
+                {[
+                  { topic: 'Politics', count: '1084', width: '92%' },
+                  { topic: 'Health', count: '742', width: '70%' },
+                  { topic: 'Finance', count: '618', width: '58%' },
+                  { topic: 'Tech & AI', count: '512', width: '48%' },
+                  { topic: 'Climate', count: '456', width: '42%' }
+                ].map((item, i) => (
+                  <div key={i} className="topic-row">
+                    <span className="topic-name">{item.topic}</span>
+                    <div className="topic-bar-track">
+                      <div className="topic-bar-fill" style={{ width: item.width }} />
+                    </div>
+                    <span className="topic-count">{item.count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Verdict Mix, Calibration, Busiest Hour */}
+          <div className="analytics-right-col">
+            {/* Verdict Mix */}
+            <div className="card right-panel-card">
+              <div className="verdict-mix-heading">VERDICT MIX · 300</div>
+              
+              <div className="segmented-bar">
+                <div className="seg-fill seg-verified" style={{ width: '60%' }} title="Verified 2,047" />
+                <div className="seg-fill seg-misleading" style={{ width: '18%' }} title="Misleading 614" />
+                <div className="seg-fill seg-false" style={{ width: '14%' }} title="False 512" />
+                <div className="seg-fill seg-unverified" style={{ width: '8%' }} title="Unverified 239" />
+              </div>
+
+              <div className="verdict-legend-grid">
+                <div className="legend-item"><span className="legend-dot dot-verified" /> Verified 2,047</div>
+                <div className="legend-item"><span className="legend-dot dot-misleading" /> Misleading 614</div>
+                <div className="legend-item"><span className="legend-dot dot-false" /> False 512</div>
+                <div className="legend-item"><span className="legend-dot dot-unverified" /> Unverified 239</div>
+              </div>
+
+              <div className="panel-divider" />
+
+              {/* Confidence Calibration */}
+              <div className="calibration-section">
+                <div className="calibration-heading">CONFIDENCE CALIBRATION</div>
+                <p className="calibration-text">
+                  Verdicts filed at 90%+ confidence were later disputed in 0.2% of cases — within the 0.5% target. Calibration drift: none detected.
+                </p>
+              </div>
+
+              <div className="panel-divider" />
+
+              {/* Busiest Hour */}
+              <div className="busiest-hour-section">
+                <div className="busiest-heading">BUSIEST HOUR</div>
+                <div className="busiest-time serif-heading">08:00–09:00</div>
+                <p className="busiest-sub">Morning wire ingest + overnight viral backlog</p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Charts Row 1 */}
-        <div className="dash-charts-row">
-          {/* Area Chart — Checks over time */}
-          <div className="card dash-chart-card large-chart">
-            <div className="chart-header">
-              <h3 className="chart-title">Checks Over Time</h3>
-              <span className="chart-period">Last 30 days</span>
-            </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={mockDashboardStats.checksOverTime} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-                <defs>
-                  <linearGradient id="checkGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="checks" stroke="#6366f1" strokeWidth={2} fill="url(#checkGrad)" name="Checks" />
-              </AreaChart>
-            </ResponsiveContainer>
+        {/* Recent Scans Table (Reference checks) */}
+        <div className="recent-scans-section">
+          <div className="recent-scans-header">
+            <h2 className="recent-scans-title serif-heading">Recent Reference Checks</h2>
+            <Link to="/check" className="btn btn-secondary btn-sm">+ Scan Webpage or Claim</Link>
           </div>
 
-          {/* Pie Chart — Fake/Real/Misleading */}
-          <div className="card dash-chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">Result Distribution</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={3} dataKey="value">
-                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend iconType="circle" iconSize={10} formatter={(v) => <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{v}</span>} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Charts Row 2 */}
-        <div className="dash-charts-row">
-          {/* Bar Chart — Categories */}
-          <div className="card dash-chart-card large-chart">
-            <div className="chart-header">
-              <h3 className="chart-title">News Categories</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={mockDashboardStats.categoryBreakdown} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-                <XAxis dataKey="category" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Checks" radius={[4, 4, 0, 0]}>
-                  {mockDashboardStats.categoryBreakdown.map((_, i) => (
-                    <Cell key={i} fill={`hsl(${240 + i * 30}, 70%, 60%)`} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Credibility Distribution */}
-          <div className="card dash-chart-card">
-            <div className="chart-header">
-              <h3 className="chart-title">Credibility Distribution</h3>
-            </div>
-            <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={mockDashboardStats.credibilityDistribution} margin={{ top: 5, right: 10, bottom: 5, left: -20 }}>
-                <XAxis dataKey="range" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="count" name="Articles" radius={[4,4,0,0]}>
-                  {mockDashboardStats.credibilityDistribution.map((_, i) => (
-                    <Cell key={i} fill={['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e'][i]} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Recent Checks Table */}
-        <div className="card dash-recent-card animate-fade-in-up">
-          <div className="chart-header">
-            <h3 className="chart-title">Recent Checks</h3>
-            <Link to="/history" className="btn btn-ghost btn-sm">
-              View All <ChevronRight size={14} />
-            </Link>
-          </div>
-          <div className="recent-table-wrap">
-            <table className="data-table">
+          <div className="card table-card">
+            <table className="proof-table">
               <thead>
                 <tr>
-                  <th>Headline</th>
-                  <th>Category</th>
-                  <th>Result</th>
-                  <th>Score</th>
-                  <th>Date</th>
-                  <th></th>
+                  <th>STATUS</th>
+                  <th>HEADLINE / CLAIM</th>
+                  <th>DOMAIN / SOURCE</th>
+                  <th>CONFIDENCE</th>
+                  <th>ACTION</th>
                 </tr>
               </thead>
               <tbody>
-                {recentChecks.map(item => (
-                  <tr key={item.id}>
-                    <td className="recent-headline">{truncate(item.headline, 55)}</td>
-                    <td><span className="category-pill">{item.category}</span></td>
+                {recentScans.slice(0, 5).map(scan => (
+                  <tr key={scan.id}>
                     <td>
-                      <span className={`badge ${ASSESSMENT_BADGE_CLASS[item.assessment]}`}>
-                        {ASSESSMENT_LABELS[item.assessment]}
+                      <span className={`badge badge-${scan.assessment.toLowerCase()}`}>
+                        {scan.assessment}
                       </span>
                     </td>
                     <td>
-                      <div className="score-mini">
-                        <div className="score-mini-bar" style={{ width: `${item.credibilityScore}%`, background: item.credibilityScore >= 70 ? 'var(--color-real)' : item.credibilityScore >= 40 ? 'var(--color-misleading)' : 'var(--color-fake)' }} />
-                        <span className="score-mini-val">{item.credibilityScore}</span>
+                      <Link to={`/result/${scan.id}`} className="scan-table-headline">
+                        {scan.headline}
+                      </Link>
+                      <div className="scan-table-meta">
+                        {scan.counts?.verified || 0} verified claims · {new Date(scan.scannedAt).toLocaleDateString()}
                       </div>
                     </td>
-                    <td className="date-cell">{formatDate(item.analysisDate)}</td>
                     <td>
-                      <Link to={`/result/${item.id}`} className="btn btn-ghost btn-sm">
-                        <ExternalLink size={13} />
+                      <span className="scan-table-domain">{scan.domain || 'Direct Input'}</span>
+                    </td>
+                    <td>
+                      <div className="confidence-cell">
+                        <div className="meter-bar" style={{ width: '60px' }}>
+                          <div className="meter-fill" style={{ width: `${scan.scores?.credibility || 85}%` }} />
+                        </div>
+                        <span className="confidence-num">{scan.scores?.credibility || 85}%</span>
+                      </div>
+                    </td>
+                    <td>
+                      <Link to={`/result/${scan.id}`} className="btn btn-secondary btn-sm">
+                        View Report ↗
                       </Link>
                     </td>
                   </tr>

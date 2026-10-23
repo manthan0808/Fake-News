@@ -1,38 +1,91 @@
-/* History, SavedNews, Profile shared styles */
-.history-page, .saved-page, .profile-page { }
+/* ================================================================
+   History — Verification Archive Styles
+   ================================================================ */
 
-.history-controls {
+.proof-history-page {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+}
+
+.history-header {
+  margin-bottom: 1.5rem;
+}
+
+.history-title {
+  font-size: 2.2rem;
+  letter-spacing: -0.02em;
+  color: #191816;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.history-sub {
+  font-size: 0.88rem;
+  color: #57534e;
+  line-height: 1.55;
+  max-width: 650px;
+}
+
+.history-controls-strip {
+  display: flex;
   gap: 1rem;
+  align-items: center;
   margin-bottom: 1.25rem;
   flex-wrap: wrap;
 }
-.history-search-wrap { position: relative; flex: 1; min-width: 200px; }
-.history-search-icon { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
-.history-search { padding-left: 2.5rem; }
-.history-filters { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.filter-pill {
-  padding: 0.4rem 0.875rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  color: var(--text-secondary);
-  font-size: 0.78rem;
-  font-weight: 500;
+
+.history-search-box {
+  width: 320px;
+  background-color: #ffffff;
+}
+
+.history-filter-pills {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.history-filter-btn {
+  background-color: #ffffff;
+  border: 1px solid #ddd9cf;
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  color: #57534e;
   cursor: pointer;
-  font-family: var(--font-sans);
   transition: all var(--transition-fast);
 }
-.filter-pill:hover { border-color: var(--border-default); color: var(--text-primary); }
-.filter-pill.active { background: var(--brand-primary); border-color: var(--brand-primary); color: white; }
 
-.history-table-card { }
-.history-table-wrap { overflow-x: auto; }
-.history-headline { color: var(--text-primary) !important; font-size: 0.82rem; max-width: 280px; }
-.history-date { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; white-space: nowrap; }
-.type-pill {
-  background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15);
-  color: var(--brand-primary-light); border-radius: var(--radius-full);
-  padding: 0.12rem 0.5rem; font-size: 0.7rem; font-weight: 500; text-transform: capitalize;
+.history-filter-btn:hover {
+  background-color: #f2efe9;
+  color: #191816;
+}
+
+.history-filter-btn.active {
+  background-color: #191816;
+  border-color: #191816;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.history-table-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.history-headline-link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #191816;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.history-headline-link:hover {
+  text-decoration: underline;
+}
+
+.history-sub-meta {
+  font-size: 0.75rem;
+  color: #78716c;
 }

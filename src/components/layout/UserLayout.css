@@ -1,32 +1,33 @@
-/* UserLayout styles */
+/* ================================================================
+   UserLayout — Proof Desk Content Container
+   ================================================================ */
+
 .user-layout {
   min-height: 100vh;
-  background: var(--bg-base);
+  background-color: #faf9f5;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 901px) {
+  .user-layout {
+    margin-left: 240px;
+  }
 }
 
 .user-main {
-  padding-top: 60px; /* navbar height */
-  min-height: 100vh;
+  flex: 1;
+  padding: 1.75rem 2rem;
+  max-width: 1300px;
+  width: 100%;
 }
 
 .user-content {
-  padding: 2rem 1.5rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
-/* When sidebar is open on desktop, shift content */
-@media (min-width: 1024px) {
+@media (max-width: 900px) {
   .user-main {
-    margin-left: 240px;
-  }
-  .user-content {
-    padding: 2rem 2rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .user-content {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem 1rem;
   }
 }

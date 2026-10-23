@@ -1,0 +1,255 @@
+[
+  {
+    "id": "62dcd0de-6fe1-4298-b251-18640da2c9e2",
+    "url": "https://nature.com/articles/d41586-026-reproducibility-meta",
+    "domain": "nature.com",
+    "headline": "Evaluating Preclinical Cancer Research: Methodological Rigor and Replication Standards",
+    "author": "Dr. Elena Vance, Senior Science Correspondent",
+    "publishedDate": "2026-02-19T08:29:00.000Z",
+    "scannedAt": "2026-02-19T08:29:00.000Z",
+    "credibilityScore": 92,
+    "assessment": "SUPPORTED",
+    "confidenceAvg": 94,
+    "counts": {
+      "total": 6,
+      "verified": 4,
+      "contradicted": 0,
+      "mixed": 0,
+      "unverified": 2
+    },
+    "scores": {
+      "credibility": 92,
+      "domainTransparency": 95,
+      "clickbait": 8,
+      "evidenceStrength": 88,
+      "contentReliability": 94
+    },
+    "domainTransparency": {
+      "score": 95,
+      "indicators": [
+        { "label": "HTTPS Protocol Enforced", "verified": true, "impact": "positive" },
+        { "label": "Identified Author Byline", "verified": true, "details": "Dr. Elena Vance" },
+        { "label": "Verifiable Publication Date", "verified": true, "details": "Feb 19, 2026" },
+        { "label": "Domain Registry Classification", "verified": true, "details": "nature.com (Established Academic Journal)" },
+        { "label": "Editorial Disclosures", "verified": true, "details": "Published Peer-Review & Correction Policies" }
+      ]
+    },
+    "sensationalism": {
+      "clickbaitScore": 8,
+      "isSensational": false,
+      "flaggedPhrases": [],
+      "headlineBodyAlignment": true
+    },
+    "claims": [
+      {
+        "id": "clm_1",
+        "text": "Drug development: Raise standards for preclinical cancer research",
+        "isHeadline": false,
+        "originalLanguage": "en",
+        "verdict": {
+          "status": "UNVERIFIED",
+          "label": "Unverified",
+          "confidence": 0,
+          "verdictReason": "When a reference is marked as Unverified, our automated system could not confidently locate it in scientific databases. This does not necessarily mean the citation is fake—it may be caused by formatting variations or obscure publishers. We suggest manually checking these citations.",
+          "authorOrSource": "Prinz, Schlange, Asadullah",
+          "supportingSource": null,
+          "contradictingSource": null,
+          "citations": []
+        }
+      },
+      {
+        "id": "clm_2",
+        "text": "Prov-dm: The prov data model and provenance verification in scientific workflows",
+        "isHeadline": false,
+        "originalLanguage": "en",
+        "verdict": {
+          "status": "UNVERIFIED",
+          "label": "Unverified",
+          "confidence": 0,
+          "verdictReason": "No corresponding open preprint or indexed DOI found in standard repositories.",
+          "authorOrSource": "Belhajjame, Cheney, Missier",
+          "supportingSource": null,
+          "contradictingSource": null,
+          "citations": []
+        }
+      },
+      {
+        "id": "clm_3",
+        "text": "Why Most Published Research Findings Are False: Statistical power and bias analysis",
+        "isHeadline": false,
+        "originalLanguage": "en",
+        "verdict": {
+          "status": "SUPPORTED",
+          "label": "Verified",
+          "confidence": 96,
+          "verdictReason": "Indexed in PLOS Medicine and PubMed with over 12,000 scholarly citations.",
+          "authorOrSource": "John P. A. Ioannidis",
+          "supportingSource": "PLOS Medicine (DOI: 10.1371/journal.pmed.0020124)",
+          "contradictingSource": null,
+          "citations": [
+            { "name": "PubMed Central / PLOS Medicine", "url": "https://journals.plos.org/plosmedicine/article?id=10.1371/journal.pmed.0020124", "snippet": "Seminal paper demonstrating why false positive findings occur frequently in clinical research." }
+          ]
+        }
+      },
+      {
+        "id": "clm_4",
+        "text": "1,500 Scientists Lift the Lid on Reproducibility Crisis in Global Laboratories",
+        "isHeadline": false,
+        "originalLanguage": "en",
+        "verdict": {
+          "status": "SUPPORTED",
+          "label": "Verified",
+          "confidence": 99,
+          "verdictReason": "Confirmed via Nature News survey archive published in Nature 533.",
+          "authorOrSource": "Monya Baker",
+          "supportingSource": "Nature Journal (Nature 533, 452-454)",
+          "contradictingSource": null,
+          "citations": [
+            { "name": "Nature Publishing Group", "url": "https://www.nature.com/articles/533452a", "snippet": "More than 70% of researchers surveyed have tried and failed to reproduce another scientist's experiments." }
+          ]
+        }
+      },
+      {
+        "id": "clm_5",
+        "text": "Deriving Chemosensitivity from Cell Lines: Forensic Bioinformatics and Reproducible Research",
+        "isHeadline": false,
+        "originalLanguage": "en",
+        "verdict": {
+          "status": "SUPPORTED",
+          "label": "Verified",
+          "confidence": 96,
+          "verdictReason": "Directly published in The Annals of Applied Statistics.",
+          "authorOrSource": "Baggerly, Coombes",
+          "supportingSource": "Institute of Mathematical Statistics",
+          "contradictingSource": null,
+          "citations": [
+            { "name": "Annals of Applied Statistics", "url": "https://projecteuclid.org/journals/annals-of-applied-statistics", "snippet": "High-throughput biology reproducibility investigation leading to clinical trial improvements." }
+          ]
+        }
+      },
+      {
+        "id": "clm_6",
+        "text": "Ten Simple Rules for Reproducible Computational Research and Data Sharing",
+        "isHeadline": false,
+        "originalLanguage": "en",
+        "verdict": {
+          "status": "SUPPORTED",
+          "label": "Verified",
+          "confidence": 99,
+          "verdictReason": "Established guideline published in PLOS Computational Biology.",
+          "authorOrSource": "Sandve, Nekrutenko, Taylor",
+          "supportingSource": "PLOS Computational Biology",
+          "contradictingSource": null,
+          "citations": [
+            { "name": "PLOS CompBio", "url": "https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1003285", "snippet": "Widely cited framework for preserving code, provenance, and experimental environments." }
+          ]
+        }
+      }
+    ],
+    "bodyText": "Reproducibility remains an urgent cornerstone across modern preclinical and computational medical research...",
+    "isSaved": true
+  },
+  {
+    "id": "prf_gu_08914",
+    "url": "https://gujaratnews.example.org/ahmedabad-metro-expansion-facts",
+    "domain": "gujaratnews.example.org",
+    "headline": "અમદાવાદ મેટ્રો ફેઝ-૨ અને ગાંધીનગર કનેક્ટિવિટી: સરકાર દ્વારા સત્તાવાર મંજૂરી અને સમયરેખા",
+    "author": "કિરીટ શાહ (સિનિયર બ્યુરો ચીફ)",
+    "publishedDate": "2026-03-11T10:15:00.000Z",
+    "scannedAt": "2026-03-11T10:15:00.000Z",
+    "credibilityScore": 88,
+    "assessment": "SUPPORTED",
+    "confidenceAvg": 91,
+    "counts": {
+      "total": 4,
+      "verified": 3,
+      "contradicted": 0,
+      "mixed": 1,
+      "unverified": 0
+    },
+    "scores": {
+      "credibility": 88,
+      "domainTransparency": 85,
+      "clickbait": 12,
+      "evidenceStrength": 85,
+      "contentReliability": 90
+    },
+    "domainTransparency": {
+      "score": 85,
+      "indicators": [
+        { "label": "HTTPS Protocol Enforced", "verified": true, "impact": "positive" },
+        { "label": "Identified Author Byline", "verified": true, "details": "કિરીટ શાહ" },
+        { "label": "Verifiable Publication Date", "verified": true, "details": "March 11, 2026" },
+        { "label": "Regional Script Verified", "verified": true, "details": "Gujarati Unicode UTF-8" },
+        { "label": "Official Department Reference", "verified": true, "details": "Gujarat Metro Rail Corporation (GMRC)" }
+      ]
+    },
+    "sensationalism": {
+      "clickbaitScore": 12,
+      "isSensational": false,
+      "flaggedPhrases": [],
+      "headlineBodyAlignment": true
+    },
+    "claims": [
+      {
+        "id": "clm_gu_1",
+        "text": "અમદાવાદ મેટ્રો ફેઝ-૨ મોટેરા સ્ટેડિયમથી મહાત્મા મંદિર ગાંધીનગર સુધી કનેક્ટિવિટી આપે છે.",
+        "isHeadline": false,
+        "originalLanguage": "gu",
+        "englishTranslation": "Ahmedabad Metro Phase-2 provides connectivity from Motera Stadium to Mahatma Mandir Gandhinagar.",
+        "verdict": {
+          "status": "SUPPORTED",
+          "label": "Verified",
+          "confidence": 95,
+          "verdictReason": "Corroborated by Gujarat Metro Rail Corporation (GMRC) project blueprint and Press Information Bureau (PIB).",
+          "authorOrSource": "Gujarat Metro Rail Corporation",
+          "supportingSource": "PIB / GMRC Official Release",
+          "contradictingSource": null,
+          "citations": [
+            { "name": "Wikipedia (Ahmedabad Metro)", "url": "https://en.wikipedia.org/wiki/Ahmedabad_Metro", "snippet": "Phase 2 connects Motera Stadium to Mahatma Mandir in Gandhinagar with 22 stations." }
+          ]
+        }
+      },
+      {
+        "id": "clm_gu_2",
+        "text": "ઇસરો અને ગુજરાત સરકાર વચ્ચે સાયન્સ સિટી ખાતે સ્પેસ ગેલેરી માટે સમજૂતી થઈ છે.",
+        "isHeadline": false,
+        "originalLanguage": "gu",
+        "englishTranslation": "An agreement was reached between ISRO and Gujarat Government for Space Gallery at Science City.",
+        "verdict": {
+          "status": "SUPPORTED",
+          "label": "Verified",
+          "confidence": 92,
+          "verdictReason": "Confirmed in Gujarat Council of Science City records and ISRO outreach partnerships.",
+          "authorOrSource": "Science City Ahmedabad",
+          "supportingSource": "ISRO / Dept of Science & Tech Gujarat",
+          "contradictingSource": null,
+          "citations": [
+            { "name": "Gujarat Science City", "url": "https://sciencecity.gujarat.gov.in", "snippet": "Space and Robotics galleries developed in coordination with ISRO." }
+          ]
+        }
+      },
+      {
+        "id": "clm_gu_3",
+        "text": "નવી યોજના હેઠળ તમામ વિદ્યાર્થીઓને સોનાના સિક્કા મફતમાં વહેંચવામાં આવશે.",
+        "isHeadline": false,
+        "originalLanguage": "gu",
+        "englishTranslation": "Under a new scheme, all students will be distributed free gold coins.",
+        "verdict": {
+          "status": "CONTRADICTED",
+          "label": "Contradicted",
+          "confidence": 98,
+          "verdictReason": "PIB Fact Check and Gujarat Information Department have repeatedly flagged this viral rumor as fabricated.",
+          "authorOrSource": "PIB Fact Check India",
+          "supportingSource": null,
+          "contradictingSource": "PIB Fact Check (FactCheck_India)",
+          "citations": [
+            { "name": "PIB Fact Check", "url": "https://factcheck.pib.gov.in", "snippet": "Fake news: No scheme exists for distributing gold coins to students." }
+          ]
+        }
+      }
+    ],
+    "bodyText": "ગુજરાત મેટ્રો રેલ કોર્પોરેશન દ્વારા ફેઝ-૨ માટે કામગીરી તેજ ગતિએ ચાલી રહી છે...",
+    "isSaved": true
+  }
+]

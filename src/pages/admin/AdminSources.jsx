@@ -1,49 +1,91 @@
-import { AdminLayout } from './AdminLayout';
+import { useState } from 'react';
+import { UserLayout } from '../../components/layout/UserLayout';
 import { mockSources } from '../../data/mockData/claims';
-import { getScoreColor } from '../../utils/formatters';
-
-const statusBadge = { Trusted: 'badge-real', Moderate: 'badge-misleading', Low: 'badge-fake', Untrusted: 'badge-fake' };
 
 export default function AdminSources() {
+  const [sources, setSources] = useState(mockSources);
+  const [search, setSearch] = useState('');
+
+  const filtered = sources.filter(s =>
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    s.domain.toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
-    <AdminLayout title="Source Management" subtitle="Manage source credibility database">
-      <div className="card" style={{ padding: 0 }}>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Source Name</th>
-              <th>Domain</th>
-              <th>Category</th>
-              <th>Credibility Score</th>
-              <th>Status</th>
-              <th>Last Checked</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockSources.map(s => (
-              <tr key={s.id}>
-                <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{s.name}</td>
-                <td style={{ fontSize: '0.78rem' }}>{s.domain}</td>
-                <td>{s.category}</td>
-                <td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: 50, height: 4, background: 'var(--bg-surface)', borderRadius: 4, overflow: 'hidden' }}>
-                      <div style={{ width: `${s.score}%`, height: '100%', background: getScoreColor(s.score), borderRadius: 4 }} />
-                    </div>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: getScoreColor(s.score) }}>{s.score}</span>
-                  </div>
-                </td>
-                <td><span className={`badge ${statusBadge[s.status] || 'badge-unverified'}`}>{s.status}</span></td>
-                <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{s.lastChecked}</td>
-                <td>
-                  <button className="btn btn-secondary btn-sm" style={{ fontSize: '0.72rem' }}>Edit Score</button>
-                </td>
+    <UserLayout>
+      <div style={{ maxWidth: 1050, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div className="meta-tag">VERIFY / SOURCE EXPLORER</div>
+          <h1 className="serif-heading" style={{ fontSize: '2.2rem', margin: '0.25rem 0 0.5rem', color: '#191816' }}>
+            Source Credibility & Wire Directory
+          </h1>
+          <p style={{ fontSize: '0.88rem', color: '#57534e' }}>
+            Registered news wire services, state information departments, and academic journal repositories evaluated by VeriScope.
+          </p>
+        </div>
+
+        <div style={{ marginBottom: '1.25rem' }}>
+          <input
+            type="text"
+            placeholder="Search verified publishers and wire syndicates..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="form-input"
+            style={{ width: '320px', background: '#ffffff' }}
+          />
+        </div>
+
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <table className="proof-table">
+            <thead>
+              <tr>
+                <th>PUBLISHER / WIRE</th>
+                <th>DOMAIN</th>
+                <th>CATEGORY</th>
+                <th>CREDIBILITY SCORE</th>
+                <th>STATUS</th>
+                <th>LAST AUDITED</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map(s => {
+                const isTrusted = s.score >= 80;
+                return (
+                  <tr key={s.id}>
+                    <td style={{ fontWeight: 600, color: '#191816' }}>{s.name}</td>
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#57534e' }}>
+                      {s.domain}
+                    </td>
+                    <td style={{ fontSize: '0.82rem', color: '#78716c' }}>{s.category}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <div className="meter-bar" style={{ width: 60 }}>
+                          <div
+                            className="meter-fill"
+                            style={{
+                              width: `${s.score}%`,
+                              background: isTrusted ? '#047857' : s.score >= 50 ? '#d97706' : '#b91c1c'
+                            }}
+                          />
+                        </div>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 600 }}>
+                          {s.score}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`badge ${isTrusted ? 'badge-verified' : 'badge-unverified'}`}>
+                        {s.status}
+                      </span>
+                    </td>
+                    <td style={{ fontSize: '0.8rem', color: '#78716c' }}>{s.lastChecked}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </AdminLayout>
+    </UserLayout>
   );
 }

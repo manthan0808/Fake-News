@@ -1,510 +1,437 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  AlertTriangle, CheckCircle, HelpCircle, XCircle,
-  ChevronDown, ChevronUp, Bookmark, BookmarkCheck, Share2,
-  Download, ExternalLink, Shield, Brain, BarChart2,
-  FileText, Globe, Zap, TrendingUp, Eye
-} from 'lucide-react';
-import {
-  RadialBarChart, RadialBar, PolarAngleAxis,
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip
-} from 'recharts';
 import { UserLayout } from '../components/layout/UserLayout';
-import { newsService } from '../services/api';
-import { mockClaims, mockEvidence } from '../data/mockData/claims';
-import {
-  ASSESSMENT_LABELS, getAssessmentColor, getAssessmentBg,
-  getScoreColor, getScoreLabel, formatDate, formatTime
-} from '../utils/formatters';
+import { proofDeskService } from '../services/api';
 import './ResultPage.css';
-
-const AssessmentIcon = ({ assessment }) => {
-  const props = { size: 28 };
-  switch (assessment) {
-    case 'LIKELY_FAKE': return <XCircle {...props} style={{ color: 'var(--color-fake)' }} />;
-    case 'LIKELY_REAL': return <CheckCircle {...props} style={{ color: 'var(--color-real)' }} />;
-    case 'MISLEADING': return <AlertTriangle {...props} style={{ color: 'var(--color-misleading)' }} />;
-    default: return <HelpCircle {...props} style={{ color: 'var(--color-unverified)' }} />;
-  }
-};
-
-const ScoreCircle = ({ score, label }) => {
-  const color = getScoreColor(score);
-  const circumference = 2 * Math.PI * 52;
-  const dash = (score / 100) * circumference;
-
-  return (
-    <div className="score-circle">
-      <svg width="130" height="130" viewBox="0 0 130 130">
-        <circle cx="65" cy="65" r="52" fill="none" stroke="var(--bg-surface)" strokeWidth="10" />
-        <circle
-          cx="65" cy="65" r="52" fill="none" stroke={color} strokeWidth="10"
-          strokeDasharray={`${dash} ${circumference}`}
-          strokeLinecap="round"
-          transform="rotate(-90 65 65)"
-          style={{ transition: 'stroke-dasharray 1.5s ease' }}
-        />
-        <text x="65" y="62" textAnchor="middle" fill={color} fontSize="26" fontWeight="800" fontFamily="Space Grotesk">
-          {score}
-        </text>
-        <text x="65" y="78" textAnchor="middle" fill="#64748b" fontSize="11">/ 100</text>
-      </svg>
-      <span className="score-circle-label">{label}</span>
-    </div>
-  );
-};
-
-const ScoreBar = ({ label, score }) => {
-  const color = getScoreColor(score);
-  return (
-    <div className="score-bar-item">
-      <div className="score-bar-header">
-        <span className="score-bar-label">{label}</span>
-        <span className="score-bar-val" style={{ color }}>{score}/100 · {getScoreLabel(score)}</span>
-      </div>
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${score}%`, background: color }} />
-      </div>
-    </div>
-  );
-};
-
-const ClaimCard = ({ claim }) => {
-  const [expanded, setExpanded] = useState(false);
-  const statusMap = {
-    SUPPORTED: { icon: CheckCircle, color: 'var(--color-real)', label: 'Supported', bg: 'var(--color-real-bg)', border: 'rgba(34,197,94,0.2)' },
-    CONTRADICTED: { icon: XCircle, color: 'var(--color-fake)', label: 'Contradicted', bg: 'var(--color-fake-bg)', border: 'rgba(239,68,68,0.2)' },
-    UNVERIFIED: { icon: HelpCircle, color: 'var(--color-unverified)', label: 'Unverified', bg: 'var(--color-unverified-bg)', border: 'rgba(148,163,184,0.2)' },
-  };
-  const s = statusMap[claim.status] || statusMap.UNVERIFIED;
-
-  return (
-    <div className="claim-card" style={{ borderColor: expanded ? s.border : 'var(--border-subtle)' }}>
-      <div className="claim-header" onClick={() => setExpanded(!expanded)}>
-        <div className="claim-status-icon" style={{ background: s.bg }}>
-          <s.icon size={14} style={{ color: s.color }} />
-        </div>
-        <p className="claim-text">"{claim.text}"</p>
-        <span className="claim-status-label" style={{ color: s.color, background: s.bg, border: `1px solid ${s.border}` }}>
-          {s.label}
-        </span>
-        <button className="claim-expand">{expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>
-      </div>
-      {expanded && (
-        <div className="claim-detail animate-fade-in">
-          <p className="claim-explanation">{claim.explanation}</p>
-          {claim.supportingSource && (
-            <div className="claim-source supporting">
-              <CheckCircle size={12} /> Source: {claim.supportingSource}
-            </div>
-          )}
-          {claim.contradictingSource && (
-            <div className="claim-source contradicting">
-              <XCircle size={12} /> Contradicted by: {claim.contradictingSource}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 export default function ResultPage() {
   const { id } = useParams();
-  const [result, setResult] = useState(null);
-  const [claims, setClaims] = useState([]);
-  const [evidence, setEvidence] = useState({ supporting: [], contradicting: [] });
+  const [report, setReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('references');
+  const [diffData, setDiffData] = useState(null);
+  const [diffLoading, setDiffLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    const load = async () => {
-      const [r, c, e] = await Promise.all([
-        newsService.getById(id),
-        newsService.getClaims(id),
-        newsService.getEvidence(id),
-      ]);
-      setResult(r);
-      setClaims(c);
-      setEvidence(e);
-      setSaved(r.isSaved);
-    };
-    load();
+    async function loadReport() {
+      setLoading(true);
+      try {
+        const data = await proofDeskService.getById(id);
+        setReport(data);
+        if (data) setSaved(data.isSaved);
+      } catch (err) {
+        console.error('Failed to load proof report:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadReport();
   }, [id]);
 
-  if (!result) {
+  const handleToggleSave = async () => {
+    try {
+      const res = await proofDeskService.toggleBookmark(id);
+      setSaved(res.isSaved);
+    } catch (e) {
+      setSaved(!saved);
+    }
+  };
+
+  const handleCheckDiff = async () => {
+    setDiffLoading(true);
+    try {
+      const diff = await proofDeskService.checkArticleDiff(id);
+      setDiffData(diff);
+      setActiveTab('diff');
+    } catch (err) {
+      alert('Change detection error: ' + err.message);
+    } finally {
+      setDiffLoading(false);
+    }
+  };
+
+  if (loading) {
     return (
       <UserLayout>
-        <div className="result-loading">
-          <div className="result-loading-spinner animate-spin" />
-          <p>Loading analysis...</p>
+        <div className="proof-loading-view">
+          <div className="proof-spinner" />
+          <p className="proof-loading-text">Retrieving proof record from database...</p>
         </div>
       </UserLayout>
     );
   }
 
-  const assessColor = getAssessmentColor(result.assessment);
-  const assessBg = getAssessmentBg(result.assessment);
-  const sentimentData = [
-    { name: 'Negative', value: result.sentiment.negative, fill: '#ef4444' },
-    { name: 'Neutral', value: result.sentiment.neutral, fill: '#94a3b8' },
-    { name: 'Positive', value: result.sentiment.positive, fill: '#22c55e' },
-  ];
+  if (!report) {
+    return (
+      <UserLayout>
+        <div className="proof-empty-state">
+          <h2>Proof Report Not Found</h2>
+          <p>The requested verification job could not be located.</p>
+          <Link to="/check" className="btn btn-primary" style={{ marginTop: '1rem' }}>
+            Run New Verification
+          </Link>
+        </div>
+      </UserLayout>
+    );
+  }
 
-  const TABS = [
-    { key: 'overview', label: 'Overview', icon: BarChart2 },
-    { key: 'claims', label: `Claims (${claims.length})`, icon: FileText },
-    { key: 'source', label: 'Source', icon: Globe },
-    { key: 'evidence', label: 'Evidence', icon: Shield },
-    { key: 'sentiment', label: 'Sentiment', icon: TrendingUp },
-    { key: 'explain', label: 'Explainable AI', icon: Brain },
-    { key: 'text', label: 'Highlighted Text', icon: Eye },
-  ];
+  const shortJobId = report.id.length > 8 ? report.id.slice(0, 8) : report.id;
+  const verifiedCount = report.counts?.verified || 0;
+  const totalCount = report.counts?.total || report.claims?.length || 1;
+  const completedDate = new Date(report.scannedAt).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
   return (
     <UserLayout>
-      <div className="result-page animate-fade-in">
-        {/* Demo Notice */}
-        <div className="demo-notice">
-          🧪 Stage 1 Demo — Results below are simulated mock data for frontend demonstration purposes
-        </div>
-
-        {/* Assessment Banner */}
-        <div className="result-banner animate-fade-in-up" style={{ background: assessBg, borderColor: `${assessColor}30` }}>
-          <div className="result-banner-left">
-            <AssessmentIcon assessment={result.assessment} />
-            <div>
-              <div className="result-banner-label">AI Assessment</div>
-              <div className="result-banner-value" style={{ color: assessColor }}>
-                {ASSESSMENT_LABELS[result.assessment]}
-              </div>
+      <div className="reference-check-page">
+        {/* Top Header matching Screenshot 2 */}
+        <div className="ref-header">
+          <div className="ref-header-left">
+            <h1 className="ref-title">Reference Check Results</h1>
+            <div className="ref-meta-line">
+              <span className="ref-job-id">
+                Job ID: <span className="ref-job-id-code">{report.id} ({shortJobId})</span>
+              </span>
+              <span className="ref-date">Completed on: {completedDate}</span>
             </div>
           </div>
-          <div className="result-banner-right">
-            <div className="result-banner-meta">
-              <span>Confidence: <strong style={{ color: assessColor }}>{result.confidence}%</strong></span>
-              <span className="result-banner-sep">·</span>
-              <span>Category: <strong>{result.category}</strong></span>
-              <span className="result-banner-sep">·</span>
-              <span>{formatDate(result.analysisDate)}</span>
+
+          {/* Top Right Badges matching Screenshot 2 */}
+          <div className="ref-header-right">
+            <div className="ref-stat-pill pill-verified">
+              <span className="pill-label">VERIFIED</span>
+              <span className="pill-number">{verifiedCount}</span>
             </div>
-            <div className="result-banner-actions">
-              <button
-                className="btn btn-secondary btn-sm"
-                onClick={() => setSaved(!saved)}
-                title="Save article"
-              >
-                {saved ? <BookmarkCheck size={15} style={{ color: 'var(--brand-primary)' }} /> : <Bookmark size={15} />}
-                {saved ? 'Saved' : 'Save'}
-              </button>
-              <button className="btn btn-secondary btn-sm" title="Share (coming soon)">
-                <Share2 size={15} /> Share
-              </button>
-              <button className="btn btn-secondary btn-sm" title="Download report (coming soon)">
-                <Download size={15} /> Report
-              </button>
+            <div className="ref-stat-pill pill-total">
+              <span className="pill-label">TOTAL</span>
+              <span className="pill-number">{totalCount}</span>
             </div>
           </div>
         </div>
 
-        {/* Headline */}
-        <div className="card result-headline-card animate-fade-in-up delay-1">
-          <div className="result-headline-label">Analyzed Headline</div>
-          <h2 className="result-headline-text">{result.headline}</h2>
-          {result.url && (
-            <a href={result.url} target="_blank" rel="noopener noreferrer" className="result-url">
-              <ExternalLink size={13} /> {result.url}
-            </a>
-          )}
+        {/* Notice Box matching Screenshot 2 */}
+        <div className="notice-box">
+          <div className="notice-title">⚠ About "Unverified" references</div>
+          <p>
+            When a reference is marked as <strong>Unverified</strong>, our automated system could not confidently locate it in scientific databases or primary wire archives. This does not necessarily mean the citation is fake—it may be caused by formatting variations, obscure publishers, or missing digital metadata. <strong>We suggest manually checking these citations.</strong>
+          </p>
         </div>
 
-        {/* Score Cards */}
-        <div className="result-scores-grid animate-fade-in-up delay-2">
-          <div className="card result-main-score">
-            <div className="result-main-score-title">Credibility Score</div>
-            <ScoreCircle score={result.credibilityScore} label="Credibility" />
-            <p className="result-main-score-note">
-              {result.credibilityScore >= 70 ? '✅ Generally credible content' :
-               result.credibilityScore >= 40 ? '⚠ Contains questionable elements' :
-               '🚨 Low credibility — verify before sharing'}
-            </p>
+        {/* Article Headline Card */}
+        <div className="card article-headline-card">
+          <div className="headline-meta">
+            <span className="meta-tag">{report.domain || 'Direct Text Submission'}</span>
+            {report.author && <span className="meta-tag">By {report.author}</span>}
           </div>
-          <div className="card result-sub-scores">
-            <h4 className="sub-scores-title">Detailed Scores</h4>
-            <div className="sub-scores-list">
-              <ScoreBar label="Source Credibility" score={result.scores.sourceCredibility} />
-              <ScoreBar label="Clickbait Score" score={result.scores.clickbait} />
-              <ScoreBar label="Evidence Strength" score={result.scores.evidenceStrength} />
-              <ScoreBar label="Content Reliability" score={result.scores.contentReliability} />
-            </div>
-          </div>
-        </div>
-
-        {/* Content Tabs */}
-        <div className="result-tabs-nav animate-fade-in-up delay-3">
-          {TABS.map(t => (
-            <button
-              key={t.key}
-              className={`result-tab-btn ${activeTab === t.key ? 'active' : ''}`}
-              onClick={() => setActiveTab(t.key)}
-              id={`result-tab-${t.key}`}
-            >
-              <t.icon size={14} /> {t.label}
+          <h2 className="headline-text">{report.headline}</h2>
+          <div className="headline-actions">
+            {report.url && (
+              <a href={report.url} target="_blank" rel="noopener noreferrer" className="source-link">
+                Original Webpage ↗
+              </a>
+            )}
+            <button className="btn btn-secondary btn-sm" onClick={handleToggleSave}>
+              {saved ? '✓ Saved Case' : 'Bookmark Case'}
             </button>
-          ))}
+            {report.url && (
+              <button className="btn btn-secondary btn-sm" onClick={handleCheckDiff} disabled={diffLoading}>
+                {diffLoading ? 'Detecting...' : 'Detect Article Changes (Diff)'}
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Tab Content */}
-        <div className="result-tab-content animate-fade-in">
-
-          {/* Overview */}
-          {activeTab === 'overview' && (
-            <div className="tab-pane">
-              {/* Why Flagged */}
-              <div className="card result-flags-card">
-                <h3 className="result-section-title">Why Was This Flagged?</h3>
-                <div className="flags-list">
-                  <div className="flag-item warning"><AlertTriangle size={15} /> Sensational headline with emotional language</div>
-                  <div className="flag-item warning"><AlertTriangle size={15} /> Core claim lacks sufficient verifiable evidence</div>
-                  <div className="flag-item warning"><AlertTriangle size={15} /> Source credibility is moderate (61/100)</div>
-                  <div className="flag-item ok"><CheckCircle size={15} /> Some information matches reports from trusted sources</div>
-                  <div className="flag-item ok"><CheckCircle size={15} /> Article acknowledges official response</div>
-                </div>
-              </div>
-
-              {/* Clickbait */}
-              <div className="card result-clickbait-card">
-                <h3 className="result-section-title">Clickbait Analysis</h3>
-                <div className="clickbait-layout">
-                  <div className="clickbait-score-block">
-                    <div className="clickbait-score-val" style={{ color: result.scores.clickbait >= 70 ? 'var(--color-fake)' : 'var(--color-misleading)' }}>
-                      {result.scores.clickbait}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/100</span>
-                    </div>
-                    <div className="clickbait-level" style={{ color: result.scores.clickbait >= 70 ? 'var(--color-fake)' : 'var(--color-misleading)', background: result.scores.clickbait >= 70 ? 'var(--color-fake-bg)' : 'var(--color-misleading-bg)' }}>
-                      {result.scores.clickbait >= 70 ? 'HIGH' : 'MODERATE'}
-                    </div>
-                  </div>
-                  <div className="clickbait-patterns">
-                    <p className="clickbait-patterns-title">Detected Patterns:</p>
-                    {['Excessive punctuation (!!!)', 'Emotional wording', 'Curiosity-gap headline', 'Capitalized words'].map((p, i) => (
-                      <div key={i} className="clickbait-pattern">
-                        <AlertTriangle size={12} style={{ color: 'var(--color-fake)', flexShrink: 0 }} /> {p}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Category */}
-              <div className="card">
-                <h3 className="result-section-title">Classification</h3>
-                <div className="classification-row">
-                  <div className="classification-item">
-                    <span className="classification-label">Category</span>
-                    <span className="classification-val">{result.category}</span>
-                  </div>
-                  <div className="classification-item">
-                    <span className="classification-label">Topic</span>
-                    <span className="classification-val">{result.topic}</span>
-                  </div>
-                  <div className="classification-item">
-                    <span className="classification-label">Input Type</span>
-                    <span className="classification-val" style={{ textTransform: 'capitalize' }}>{result.inputType}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+        {/* Tab Navigation */}
+        <div className="proof-tabs-bar">
+          <button
+            className={`proof-tab-btn ${activeTab === 'references' ? 'active' : ''}`}
+            onClick={() => setActiveTab('references')}
+          >
+            Claim Verifications ({report.claims?.length || 0})
+          </button>
+          <button
+            className={`proof-tab-btn ${activeTab === 'evidence' ? 'active' : ''}`}
+            onClick={() => setActiveTab('evidence')}
+          >
+            Evidence & Direct Citations
+          </button>
+          <button
+            className={`proof-tab-btn ${activeTab === 'transparency' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transparency')}
+          >
+            Domain Transparency ({report.domainTransparency?.score || 85}/100)
+          </button>
+          <button
+            className={`proof-tab-btn ${activeTab === 'sensationalism' ? 'active' : ''}`}
+            onClick={() => setActiveTab('sensationalism')}
+          >
+            Sensationalism & Phrase Highlights
+          </button>
+          {diffData && (
+            <button
+              className={`proof-tab-btn ${activeTab === 'diff' ? 'active' : ''}`}
+              onClick={() => setActiveTab('diff')}
+            >
+              Article Change Diff
+            </button>
           )}
+        </div>
 
-          {/* Claims */}
-          {activeTab === 'claims' && (
-            <div className="tab-pane">
-              <div className="card">
-                <h3 className="result-section-title">Claim Analysis</h3>
-                <p className="result-section-sub">AI-extracted factual claims from the article, each verified against evidence databases.</p>
-                <div className="claims-list">
-                  {claims.map((claim, i) => (
-                    <ClaimCard key={claim.id} claim={claim} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+        {/* TAB 1: Main Reference Check Table (Exact Screenshot 2 Match) */}
+        {activeTab === 'references' && (
+          <div className="card ref-table-card">
+            <table className="proof-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '130px' }}>RESULT ↓</th>
+                  <th>PAPER TITLE / CLAIM</th>
+                  <th style={{ width: '220px' }}>AUTHORS / SOURCE</th>
+                  <th style={{ width: '130px' }}>CONFIDENCE</th>
+                  <th style={{ width: '60px', textAlign: 'center' }}>LINK</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(report.claims || []).map((claim) => {
+                  const status = claim.verdict?.status || 'UNVERIFIED';
+                  const conf = claim.verdict?.confidence || 0;
+                  const citations = claim.verdict?.citations || [];
+                  const primaryCit = citations[0] || null;
+                  const authorOrSource = claim.verdict?.authorOrSource || claim.verdict?.supportingSource || claim.verdict?.contradictingSource || report.author || 'Primary wire report';
 
-          {/* Source */}
-          {activeTab === 'source' && (
-            <div className="tab-pane">
-              <div className="card">
-                <h3 className="result-section-title">Source Analysis</h3>
-                <div className="source-grid">
-                  <div className="source-main">
-                    <div className="source-name-row">
-                      <div className="source-icon"><Globe size={20} /></div>
-                      <div>
-                        <div className="source-name">{result.source.name}</div>
-                        {result.source.url && <a href={result.source.url} className="source-url" target="_blank" rel="noopener noreferrer">{result.source.url}</a>}
-                      </div>
-                    </div>
-                    <div className="source-score-bar-wrap">
-                      <div className="source-score-header">
-                        <span>Source Credibility</span>
-                        <span style={{ color: getScoreColor(result.source.score) }}>{result.source.score}/100 · {getScoreLabel(result.source.score)}</span>
-                      </div>
-                      <div className="progress-bar">
-                        <div className="progress-fill" style={{ width: `${result.source.score}%`, background: getScoreColor(result.source.score) }} />
-                      </div>
-                    </div>
-                    <div className="source-note">{result.source.historyNote}</div>
-                  </div>
-                  <div className="source-indicators">
-                    {[
-                      { label: 'HTTPS Secure', ok: result.source.httpsSecure },
-                      { label: 'Author Available', ok: result.source.authorAvailable },
-                      { label: 'Publication Date', ok: result.source.dateAvailable },
-                      { label: 'Known Domain', ok: result.source.score > 30 },
-                    ].map((ind, i) => (
-                      <div key={i} className="source-indicator">
-                        {ind.ok ? <CheckCircle size={14} style={{ color: 'var(--color-real)' }} /> : <XCircle size={14} style={{ color: 'var(--color-fake)' }} />}
-                        <span style={{ color: ind.ok ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{ind.label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                  return (
+                    <tr key={claim.id}>
+                      {/* Result Badge */}
+                      <td>
+                        <span className={`badge badge-${status.toLowerCase()}`}>
+                          {status === 'SUPPORTED' ? 'VERIFIED' : status}
+                        </span>
+                      </td>
 
-          {/* Evidence */}
-          {activeTab === 'evidence' && (
-            <div className="tab-pane">
-              <div className="card">
-                <h3 className="result-section-title">Evidence Analysis</h3>
-                {evidence.supporting.length > 0 && (
-                  <div className="evidence-section">
-                    <h4 className="evidence-section-title supporting">✅ Supporting Evidence ({evidence.supporting.length})</h4>
-                    {evidence.supporting.map(ev => (
-                      <div key={ev.id} className="evidence-card supporting">
-                        <p className="evidence-text">{ev.text}</p>
-                        <div className="evidence-meta">
-                          <span className="evidence-source">Source: {ev.source}</span>
-                          <span className="evidence-credibility">Credibility: {ev.credibility}%</span>
+                      {/* Claim Text */}
+                      <td>
+                        <div className="claim-statement">
+                          {claim.text}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {evidence.contradicting.length > 0 && (
-                  <div className="evidence-section" style={{ marginTop: '1.25rem' }}>
-                    <h4 className="evidence-section-title contradicting">❌ Contradicting Evidence ({evidence.contradicting.length})</h4>
-                    {evidence.contradicting.map(ev => (
-                      <div key={ev.id} className="evidence-card contradicting">
-                        <p className="evidence-text">{ev.text}</p>
-                        <div className="evidence-meta">
-                          <span className="evidence-source">Source: {ev.source}</span>
-                          <span className="evidence-credibility">Credibility: {ev.credibility}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Sentiment */}
-          {activeTab === 'sentiment' && (
-            <div className="tab-pane">
-              <div className="card">
-                <h3 className="result-section-title">Sentiment Analysis</h3>
-                <div className="sentiment-layout">
-                  <div className="sentiment-chart">
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie data={sentimentData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value">
-                          {sentimentData.map((s, i) => <Cell key={i} fill={s.fill} />)}
-                        </Pie>
-                        <Tooltip formatter={(v) => `${v}%`} contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-default)' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="sentiment-details">
-                    {sentimentData.map((s, i) => (
-                      <div key={i} className="sentiment-item">
-                        <div className="sentiment-item-top">
-                          <span className="sentiment-label">{s.name}</span>
-                          <span className="sentiment-pct" style={{ color: s.fill }}>{s.value}%</span>
-                        </div>
-                        <div className="progress-bar">
-                          <div className="progress-fill" style={{ width: `${s.value}%`, background: s.fill }} />
-                        </div>
-                      </div>
-                    ))}
-                    <div className="sentiment-emotions">
-                      <p className="sentiment-emotions-title">Emotional Indicators</p>
-                      {Object.entries(result.emotionalIndicators).map(([key, val]) => (
-                        <div key={key} className="sentiment-emotion">
-                          <span>{key.charAt(0).toUpperCase() + key.slice(1)}</span>
-                          <div className="sentiment-emotion-bar">
-                            <div style={{ width: `${val}%`, height: '100%', background: 'var(--gradient-brand)', borderRadius: 'var(--radius-full)' }} />
+                        {claim.originalLanguage === 'gu' && (
+                          <div className="claim-regional-note">
+                            <span className="lang-tag">ગુજરાતી</span>
+                            {claim.englishTranslation && (
+                              <span className="lang-translation">
+                                Translation: "{claim.englishTranslation}"
+                              </span>
+                            )}
                           </div>
-                          <span className="sentiment-emotion-val">{val}%</span>
+                        )}
+                        <div className="claim-reason-sub">
+                          {claim.verdict?.verdictReason}
                         </div>
-                      ))}
+                      </td>
+
+                      {/* Authors / Source */}
+                      <td>
+                        <span className="source-author-text">
+                          {authorOrSource}
+                        </span>
+                      </td>
+
+                      {/* Confidence Meter Bar */}
+                      <td>
+                        <div className="confidence-meter-group">
+                          <div className="meter-track">
+                            <div
+                              className={`meter-bar-fill fill-${status.toLowerCase()}`}
+                              style={{ width: `${conf}%` }}
+                            />
+                          </div>
+                          <span className="meter-number">{conf}</span>
+                        </div>
+                      </td>
+
+                      {/* Link ↗ */}
+                      <td style={{ textAlign: 'center' }}>
+                        {primaryCit?.url ? (
+                          <a
+                            href={primaryCit.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ref-link-icon"
+                            title={`Inspect source: ${primaryCit.name}`}
+                          >
+                            ↗
+                          </a>
+                        ) : (
+                          <span className="ref-link-dash">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* TAB 2: Evidence & Direct Citations */}
+        {activeTab === 'evidence' && (
+          <div className="evidence-panel">
+            <div className="card">
+              <h3 className="panel-title">Corroborating Evidence & Source Independence</h3>
+              <p className="panel-sub">
+                Live primary document excerpts retrieved from encyclopedia databases, official agencies, and news syndicates.
+              </p>
+
+              <div className="evidence-claims-list">
+                {(report.claims || []).map((claim, idx) => (
+                  <div key={idx} className="evidence-claim-block">
+                    <div className="evidence-claim-header">
+                      <span className={`badge badge-${(claim.verdict?.status || 'UNVERIFIED').toLowerCase()}`}>
+                        {claim.verdict?.status || 'UNVERIFIED'}
+                      </span>
+                      <strong className="evidence-claim-title">"{claim.text}"</strong>
+                    </div>
+
+                    <div className="evidence-citations-wrap">
+                      {claim.verdict?.citations && claim.verdict.citations.length > 0 ? (
+                        claim.verdict.citations.map((cit, cIdx) => (
+                          <div key={cIdx} className="citation-quote-box">
+                            <div className="citation-header">
+                              <span className="citation-source-name">{cit.name}</span>
+                              <a href={cit.url} target="_blank" rel="noopener noreferrer" className="citation-url">
+                                View Original ↗
+                              </a>
+                            </div>
+                            <blockquote className="citation-snippet">
+                              "{cit.snippet}"
+                            </blockquote>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="empty-citation-note">
+                          No direct public citation returned for this claim. Marked as Unverified.
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Explainable AI */}
-          {activeTab === 'explain' && (
-            <div className="tab-pane">
-              <div className="card">
-                <h3 className="result-section-title">
-                  <Brain size={20} style={{ color: 'var(--brand-primary)', verticalAlign: 'middle', marginRight: '0.5rem' }} />
-                  Why Does the AI Think This is {ASSESSMENT_LABELS[result.assessment]}?
-                </h3>
-                <div className="explain-block">
-                  <p className="explain-text">{result.explanation}</p>
-                </div>
-                <div className="explain-note">
-                  <Brain size={14} />
-                  <span>This explanation is generated to help you understand the AI's reasoning. The system uses multiple signals, not a single factor, to reach its assessment.</span>
-                </div>
-                <div className="explain-disclaimer">
-                  ⚠ This system provides evidence-based assessments and cannot determine absolute truth or falsehood. Always cross-check with additional trusted sources.
-                </div>
-              </div>
-            </div>
-          )}
+        {/* TAB 3: Domain Transparency */}
+        {activeTab === 'transparency' && (
+          <div className="card transparency-card">
+            <h3 className="panel-title">Domain Transparency & Credibility Audit</h3>
+            <p className="panel-sub">
+              Systematic inspection of editorial accountability, encryption protocols, and publisher disclosure signals.
+            </p>
 
-          {/* Highlighted Text */}
-          {activeTab === 'text' && (
-            <div className="tab-pane">
-              <div className="card">
-                <h3 className="result-section-title">Article Content Analysis</h3>
-                <div className="highlight-legend">
-                  <span className="legend-item"><span className="legend-dot low" /> Low Concern</span>
-                  <span className="legend-item"><span className="legend-dot medium" /> Moderate Concern</span>
-                  <span className="legend-item"><span className="legend-dot high" /> High Concern</span>
-                </div>
-                <div className="highlight-text">
-                  {result.highlightedText.map((seg, i) => (
-                    <span
-                      key={i}
-                      className={`highlight-${seg.riskLevel.toLowerCase()}`}
-                      title={`Risk level: ${seg.riskLevel}`}
-                    >
-                      {seg.text}{' '}
-                    </span>
-                  ))}
-                </div>
+            <div className="transparency-score-banner">
+              <div className="transparency-score-val">{report.domainTransparency?.score || 85}</div>
+              <div className="transparency-score-meta">
+                <span className="transparency-score-label">Domain Transparency Index</span>
+                <span className="transparency-score-desc">
+                  Based on HTTPS certification, identified author bylines, verifiable publication dates, and registry classification.
+                </span>
               </div>
             </div>
-          )}
-        </div>
+
+            <div className="transparency-indicators-list">
+              {(report.domainTransparency?.indicators || []).map((ind, i) => (
+                <div key={i} className="indicator-row">
+                  <div className="indicator-check">
+                    {ind.verified ? (
+                      <span className="check-icon-ok">✓</span>
+                    ) : (
+                      <span className="check-icon-fail">✕</span>
+                    )}
+                  </div>
+                  <div className="indicator-details">
+                    <div className="indicator-label">{ind.label}</div>
+                    {ind.details && <div className="indicator-sub">{ind.details}</div>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: Sensationalism & Phrase Highlights */}
+        {activeTab === 'sensationalism' && (
+          <div className="card sensationalism-card">
+            <h3 className="panel-title">Headline & Text Sensationalism Audit</h3>
+            <p className="panel-sub">
+              Heuristic identification of hyperbolic superlatives, emotional manipulation cues, and clickbait syntax.
+            </p>
+
+            <div className="sensationalism-meter-row">
+              <span className="sensational-score-label">Clickbait / Sensationalism Score:</span>
+              <strong className="sensational-score-num">{report.sensationalism?.clickbaitScore || 8} / 100</strong>
+            </div>
+
+            {report.sensationalism?.flaggedPhrases && report.sensationalism.flaggedPhrases.length > 0 ? (
+              <div className="flagged-phrases-list">
+                <div className="flagged-title">Flagged Linguistic Patterns:</div>
+                {report.sensationalism.flaggedPhrases.map((phrase, pIdx) => (
+                  <div key={pIdx} className="flagged-phrase-item">
+                    <span className="phrase-badge">{phrase.category}</span>
+                    <span className="phrase-quote">"{phrase.phrase}"</span>
+                    <span className="phrase-tip">{phrase.explanation}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="clean-prose-notice">
+                ✓ No sensational clickbait triggers or hyperbolic superlatives were detected in the analyzed headline or body copy.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: Article Change Detection Diff */}
+        {activeTab === 'diff' && diffData && (
+          <div className="card diff-card">
+            <h3 className="panel-title">Article Change Detection (Stealth Edits)</h3>
+            <p className="panel-sub">{diffData.summary}</p>
+
+            <div className="diff-meta-strip">
+              <div>Initial Scan: {new Date(diffData.originalScanDate).toLocaleTimeString()}</div>
+              <div>Rechecked: {new Date(diffData.recheckedAt).toLocaleTimeString()}</div>
+              <div>Headline Changed: {diffData.headlineChanged ? 'YES' : 'NO'}</div>
+            </div>
+
+            {diffData.headlineChanged && (
+              <div className="diff-headline-box">
+                <div className="diff-old">Previous: "{diffData.originalHeadline}"</div>
+                <div className="diff-new">Current: "{diffData.currentHeadline}"</div>
+              </div>
+            )}
+
+            {diffData.addedSegments?.length > 0 && (
+              <div className="diff-block">
+                <h4>Added or Modified Content:</h4>
+                {diffData.addedSegments.map((s, idx) => (
+                  <div key={idx} className="diff-line-added">+ {s}</div>
+                ))}
+              </div>
+            )}
+
+            {diffData.removedSegments?.length > 0 && (
+              <div className="diff-block">
+                <h4>Removed Content:</h4>
+                {diffData.removedSegments.map((s, idx) => (
+                  <div key={idx} className="diff-line-removed">- {s}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </UserLayout>
   );

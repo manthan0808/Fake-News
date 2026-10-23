@@ -1,143 +1,188 @@
-/* Sidebar Styles */
+/* ================================================================
+   Sidebar — The Meridian Proof Desk (Screenshot 1 Match)
+   ================================================================ */
+
 .sidebar {
-  position: fixed;
-  top: 60px;
-  left: 0;
-  bottom: 0;
   width: 240px;
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-subtle);
+  background-color: #faf9f5;
+  border-right: 1px solid #eae7df;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
-  z-index: 90;
-  transform: translateX(-100%);
-  transition: transform var(--transition-base);
+  z-index: 100;
   overflow-y: auto;
 }
 
-.sidebar-open {
-  transform: translateX(0);
-  box-shadow: var(--shadow-lg);
-}
-
-.sidebar-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 89;
-}
-
 .sidebar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1rem 0.75rem;
-  border-bottom: 1px solid var(--border-subtle);
+  padding: 1.75rem 1.5rem 1.25rem;
+  border-bottom: 1px solid #eae7df;
 }
 
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.sidebar-logo {
-  width: 28px; height: 28px;
-  background: var(--gradient-brand);
-  border-radius: 6px;
-  display: flex; align-items: center; justify-content: center;
-  color: white;
+.sidebar-brand-link {
+  text-decoration: none;
+  display: block;
 }
 
 .sidebar-brand-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--text-primary);
-}
-
-.sidebar-close {
-  background: none; border: none;
-  color: var(--text-secondary); cursor: pointer;
-  padding: 4px; border-radius: 4px;
-  transition: all var(--transition-fast);
-}
-.sidebar-close:hover { background: var(--bg-card); color: var(--text-primary); }
-
-.sidebar-section-label {
-  padding: 1rem 1rem 0.5rem;
-  font-size: 0.7rem;
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
+  color: #191816;
+  letter-spacing: -0.01em;
+  display: block;
+}
+
+.sidebar-brand-sub {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  color: #78716c;
+  display: block;
+  margin-top: 0.25rem;
 }
 
 .sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 0.5rem;
+  padding: 1.25rem 0;
+  flex: 1;
 }
 
-.sidebar-item {
+.sidebar-group {
+  margin-bottom: 1.4rem;
+}
+
+.sidebar-group-heading {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: #a8a29e;
+  padding: 0 1.5rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.sidebar-link {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: var(--radius-md);
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  color: #44403c;
+  font-size: 0.88rem;
   text-decoration: none;
-  transition: all var(--transition-fast);
   position: relative;
+  transition: all var(--transition-fast);
 }
-.sidebar-item:hover { background: var(--bg-card); color: var(--text-primary); }
-.sidebar-item-active {
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--brand-primary-light);
+
+.sidebar-link:hover {
+  background-color: #f2efe9;
+  color: #191816;
 }
-.sidebar-item-active::before {
+
+.sidebar-link-active {
+  background-color: #f2efe9;
+  color: #191816;
+  font-weight: 500;
+}
+
+.sidebar-link-active::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 8px; bottom: 8px;
+  top: 0;
+  bottom: 0;
   width: 3px;
-  background: var(--brand-primary);
-  border-radius: 0 2px 2px 0;
+  background-color: var(--color-accent);
 }
 
-.sidebar-chevron {
-  margin-left: auto;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-.sidebar-item:hover .sidebar-chevron,
-.sidebar-item-active .sidebar-chevron { opacity: 0.5; }
-
+/* Sidebar Footer */
 .sidebar-footer {
-  margin-top: auto;
-  padding: 1rem;
-  border-top: 1px solid var(--border-subtle);
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #eae7df;
+  background-color: #faf9f5;
 }
 
-.sidebar-demo-badge {
-  background: rgba(245, 158, 11, 0.1);
-  border: 1px solid rgba(245, 158, 11, 0.2);
-  color: var(--color-misleading);
-  padding: 0.5rem 0.75rem;
-  border-radius: var(--radius-md);
+.sidebar-footer-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.sidebar-footer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  color: #57534e;
+  text-decoration: none;
+}
+
+.sidebar-footer-link:hover {
+  color: #191816;
+}
+
+.sidebar-badge-count {
+  background-color: var(--color-accent);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 9999px;
+}
+
+.sidebar-user-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #eae7df;
+}
+
+.sidebar-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #191816;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 0.72rem;
-  font-weight: 500;
-  text-align: center;
+  font-weight: 600;
+  font-family: var(--font-mono);
 }
 
-/* Desktop: sidebar always visible */
-@media (min-width: 1024px) {
+.sidebar-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #191816;
+}
+
+.sidebar-user-role {
+  font-size: 0.7rem;
+  color: #78716c;
+}
+
+/* Mobile backdrop */
+.sidebar-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 99;
+}
+
+@media (max-width: 900px) {
   .sidebar {
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+  }
+  .sidebar-open {
     transform: translateX(0);
   }
-  .sidebar-backdrop { display: none; }
-  .sidebar-close { display: none; }
 }

@@ -1,60 +1,82 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Bookmark, BookmarkX, ExternalLink } from 'lucide-react';
 import { UserLayout } from '../components/layout/UserLayout';
-import { mockNewsHistory } from '../data/mockData/news';
-import { formatDate, truncate, ASSESSMENT_LABELS, ASSESSMENT_BADGE_CLASS } from '../utils/formatters';
+import { proofDeskService } from '../services/api';
 
 export default function SavedNews() {
-  const [saved, setSaved] = useState(mockNewsHistory.filter(n => n.isSaved));
+  const [savedScans, setSavedScans] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const remove = (id) => setSaved(prev => prev.filter(n => n.id !== id));
+  useEffect(() => {
+    async function loadSaved() {
+      try {
+        const history = await proofDeskService.getHistory();
+        setSavedScans(history.filter(s => s.isSaved));
+      } catch (err) {
+        console.error('Failed to load saved cases:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSaved();
+  }, []);
+
+  const handleRemove = async (id) => {
+    await proofDeskService.toggleBookmark(id);
+    setSavedScans(prev => prev.filter(s => s.id !== id));
+  };
 
   return (
     <UserLayout>
-      <div className="animate-fade-in">
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">Saved News</h1>
-            <p className="page-sub">{saved.length} bookmarked articles</p>
-          </div>
+      <div style={{ maxWidth: 1000, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div className="meta-tag">PUBLISH / SAVED CASES</div>
+          <h1 className="serif-heading" style={{ fontSize: '2.2rem', margin: '0.25rem 0 0.5rem', color: '#191816' }}>
+            Saved Proof Cases
+          </h1>
+          <p style={{ fontSize: '0.88rem', color: '#57534e' }}>
+            Bookmarked claim verification reports and reference checks saved for research citations.
+          </p>
         </div>
 
-        {saved.length === 0 ? (
-          <div className="empty-state">
-            <Bookmark size={52} className="empty-state-icon" />
-            <h3>No saved articles</h3>
-            <p>Bookmark analysis results to access them here later</p>
-            <Link to="/check" className="btn btn-primary" style={{ marginTop: '1rem' }}>Check News</Link>
+        {loading ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#78716c' }}>
+            Loading saved cases...
+          </div>
+        ) : savedScans.length === 0 ? (
+          <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.1rem', color: '#191816', marginBottom: '0.5rem' }}>No bookmarked cases yet</h3>
+            <p style={{ fontSize: '0.85rem', color: '#78716c', marginBottom: '1.25rem' }}>
+              Whenever you complete a reference check, click "Bookmark Case" to save it here for citation export.
+            </p>
+            <Link to="/check" className="btn btn-primary btn-sm">
+              Verify an Article or Claim →
+            </Link>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-            {saved.map(item => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '1.25rem' }}>
+            {savedScans.map(item => (
               <div key={item.id} className="card" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem' }}>
-                  <span className={`badge ${ASSESSMENT_BADGE_CLASS[item.assessment]}`}>
-                    {ASSESSMENT_LABELS[item.assessment]}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span className={`badge badge-${(item.assessment || 'unverified').toLowerCase()}`}>
+                    {item.assessment === 'SUPPORTED' ? 'VERIFIED' : item.assessment}
                   </span>
                   <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => remove(item.id)}
-                    title="Remove bookmark"
-                    style={{ color: 'var(--color-fake)', padding: '4px' }}
+                    onClick={() => handleRemove(item.id)}
+                    style={{ background: 'none', border: 'none', color: '#b91c1c', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}
                   >
-                    <BookmarkX size={16} />
+                    Remove ✕
                   </button>
                 </div>
-                <h4 style={{ fontSize: '0.9rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-                  {truncate(item.headline, 90)}
-                </h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                  <span>{item.category}</span>
-                  <span>Score: <strong style={{ color: 'var(--text-primary)' }}>{item.credibilityScore}/100</strong></span>
-                  <span>{formatDate(item.analysisDate)}</span>
-                </div>
-                <Link to={`/result/${item.id}`} className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }}>
-                  <ExternalLink size={13} /> View Analysis
+
+                <Link to={`/result/${item.id}`} style={{ fontSize: '0.95rem', fontWeight: 600, color: '#191816', textDecoration: 'none', lineHeight: 1.4 }}>
+                  {item.headline}
                 </Link>
+
+                <div style={{ fontSize: '0.78rem', color: '#78716c', display: 'flex', justifyContent: 'space-between', marginTop: 'auto', paddingTop: '0.5rem', borderTop: '1px solid #eae7df' }}>
+                  <span>{item.domain || 'Direct Text'}</span>
+                  <span style={{ fontFamily: 'var(--font-mono)' }}>Credibility: <strong>{item.credibilityScore || 85}/100</strong></span>
+                </div>
               </div>
             ))}
           </div>
