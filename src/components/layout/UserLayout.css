@@ -1,0 +1,32 @@
+/* UserLayout styles */
+.user-layout {
+  min-height: 100vh;
+  background: var(--bg-base);
+}
+
+.user-main {
+  padding-top: 60px; /* navbar height */
+  min-height: 100vh;
+}
+
+.user-content {
+  padding: 2rem 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* When sidebar is open on desktop, shift content */
+@media (min-width: 1024px) {
+  .user-main {
+    margin-left: 240px;
+  }
+  .user-content {
+    padding: 2rem 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .user-content {
+    padding: 1.5rem 1rem;
+  }
+}
