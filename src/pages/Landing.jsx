@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { VeriScopeLogo } from '../components/common/VeriScopeLogo';
 import './Landing.css';
 
 export default function Landing() {
@@ -7,8 +8,7 @@ export default function Landing() {
       {/* Editorial Header */}
       <header className="landing-header">
         <div className="landing-brand">
-          <span className="brand-name serif-heading">Crosscheck</span>
-          <span className="brand-sub">THE MERIDIAN · PROOF DESK</span>
+          <VeriScopeLogo size={36} showWordmark={true} />
         </div>
         <div className="landing-header-nav">
           <Link to="/check" className="landing-nav-link">Verify Claim</Link>

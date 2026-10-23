@@ -8,11 +8,24 @@
 </head>
 <body>
   <div class="popup-container">
-    <!-- Header -->
+    <!-- Header with Custom Logo -->
     <header class="popup-header">
       <div class="brand">
-        <span class="brand-title">VeriScope</span>
-        <span class="brand-sub">PROOF DESK SCANNER</span>
+        <svg class="brand-icon" width="24" height="24" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="4" y="4" width="56" height="56" rx="14" fill="#0f172a" stroke="#1e293b" stroke-width="2" />
+          <line x1="32" y1="8" x2="32" y2="14" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+          <line x1="32" y1="50" x2="32" y2="56" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+          <line x1="8" y1="32" x2="14" y2="32" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+          <line x1="50" y1="32" x2="56" y2="32" stroke="#64748b" stroke-width="2" stroke-linecap="round" />
+          <rect x="18" y="16" width="28" height="32" rx="3" fill="#1e293b" stroke="#334155" stroke-width="1.5" />
+          <line x1="23" y1="23" x2="33" y2="23" stroke="#475569" stroke-width="2" stroke-linecap="round" />
+          <line x1="23" y1="29" x2="41" y2="29" stroke="#475569" stroke-width="2" stroke-linecap="round" />
+          <path d="M25 38L31 43L43 27" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <div class="brand-text">
+          <span class="brand-title">VeriScope</span>
+          <span class="brand-sub">PROOF DESK SCANNER</span>
+        </div>
       </div>
       <div class="status-indicator" id="serverStatus" title="Proof Desk API Connected">
         <span class="status-dot"></span>
@@ -22,7 +35,7 @@
 
     <!-- Active Tab Info -->
     <div class="active-tab-card">
-      <div class="meta-label">CURRENT TAB</div>
+      <div class="meta-label">CURRENT TAB DOM</div>
       <div class="tab-domain" id="tabDomain">Detecting active page...</div>
       <div class="tab-title" id="tabTitle">Loading page title...</div>
     </div>
@@ -30,21 +43,29 @@
     <!-- Initial State / Scan Trigger -->
     <div id="initialView" class="view-panel">
       <p class="scan-description">
-        Extracts headline, byline, and factual claims directly from the active DOM without copying URLs.
+        Deconstructs active webpage into factual claims and cross-corroborates across live Indian & global news feeds (NDTV, TOI, IE, Republic, Hindu, PIB).
       </p>
       <button id="scanBtn" class="btn btn-primary w-full">
         Scan Current Page
       </button>
-      <div class="keyboard-hint">Cross-checks claims via live public knowledge bases</div>
+      <div class="keyboard-hint">Live multi-source news & encyclopedic corroboration</div>
     </div>
 
-    <!-- Progress State -->
+    <!-- Live Progress State (Task 7) -->
     <div id="loadingView" class="view-panel hidden">
       <div class="progress-container">
         <div class="progress-bar">
           <div class="progress-fill" id="progressFill"></div>
         </div>
-        <div class="progress-step-text" id="progressStep">Initializing DOM extraction...</div>
+        <div class="progress-step-text" id="progressStep">Extracting article content...</div>
+        <ul class="progress-checklist" id="progressChecklist">
+          <li id="step1" class="check-item active">Extracting article content & author metadata</li>
+          <li id="step2" class="check-item">Identifying checkable factual claims</li>
+          <li id="step3" class="check-item">Generating targeted multi-source queries</li>
+          <li id="step4" class="check-item">Searching news sources & knowledge graphs</li>
+          <li id="step5" class="check-item">Comparing supporting vs contradicting evidence</li>
+          <li id="step6" class="check-item">Calculating consensus and confidence</li>
+        </ul>
       </div>
     </div>
 
@@ -70,8 +91,15 @@
         </div>
       </div>
 
+      <!-- Telemetry Strip -->
+      <div class="telemetry-strip" id="telemetryStrip">
+        <span id="telemetryArticles">0 articles found</span> · 
+        <span id="telemetryQueries">0 queries</span> · 
+        <span id="telemetryTime">0s</span>
+      </div>
+
       <div class="claims-list-container">
-        <div class="claims-title">EXTRACTED CLAIMS</div>
+        <div class="claims-title">CLAIM-LEVEL EVIDENCE CORROBORATION</div>
         <div id="claimsList" class="claims-list"></div>
       </div>
 

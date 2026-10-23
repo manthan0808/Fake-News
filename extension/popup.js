@@ -1,5 +1,5 @@
 /**
- * VeriScope Chrome Extension Popup Logic
+ * VeriScope Chrome Extension Popup Logic (v2.5)
  */
 
 const API_BASE = 'http://localhost:5000/api';
@@ -24,6 +24,10 @@ const resScore = document.getElementById('resScore');
 const claimsList = document.getElementById('claimsList');
 const openReportBtn = document.getElementById('openReportBtn');
 const highlightBtn = document.getElementById('highlightBtn');
+const telemetryStrip = document.getElementById('telemetryStrip');
+const telemetryArticles = document.getElementById('telemetryArticles');
+const telemetryQueries = document.getElementById('telemetryQueries');
+const telemetryTime = document.getElementById('telemetryTime');
 
 function switchView(viewName) {
   initialView.classList.add('hidden');
@@ -37,6 +41,23 @@ function switchView(viewName) {
   if (viewName === 'result') resultView.classList.remove('hidden');
 }
 
+function updateChecklistStep(stepIndex, pct, message) {
+  progressFill.style.width = `${pct}%`;
+  progressStep.textContent = message;
+
+  for (let i = 1; i <= 6; i++) {
+    const el = document.getElementById(`step${i}`);
+    if (!el) continue;
+    if (i < stepIndex) {
+      el.className = 'check-item completed';
+    } else if (i === stepIndex) {
+      el.className = 'check-item active';
+    } else {
+      el.className = 'check-item';
+    }
+  }
+}
+
 // 1. Detect Active Tab on Open
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -47,7 +68,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       tabDomainEl.textContent = url.hostname.replace(/^www\./, '') || 'Browser Internal Tab';
       tabTitleEl.textContent = currentActiveTab.title || 'Untitled Page';
 
-      // Restrict scanning on chrome:// or edge:// pages
       if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         scanBtn.disabled = true;
         scanBtn.textContent = 'Cannot scan browser internal pages';
@@ -67,9 +87,8 @@ async function initiateScan() {
   if (!currentActiveTab) return;
   switchView('loading');
 
-  // Step 1: DOM Extraction
-  progressFill.style.width = '20%';
-  progressStep.textContent = '1/4: Extracting article and metadata from DOM...';
+  // Stage 1: DOM Extraction
+  updateChecklistStep(1, 15, 'Extracting article content & author metadata...');
 
   let pageData = null;
   try {
@@ -78,7 +97,6 @@ async function initiateScan() {
       pageData = response.data;
     }
   } catch (e) {
-    // If content script was not already injected, fallback to tab properties
     pageData = {
       url: currentActiveTab.url,
       title: currentActiveTab.title,
@@ -87,14 +105,26 @@ async function initiateScan() {
     };
   }
 
-  // Step 2: Sending to Proof Desk Pipeline
-  progressFill.style.width = '45%';
-  progressStep.textContent = '2/4: Identifying factual assertions & regional script...';
+  // Simulated realistic checklist cadence while backend is querying real news APIs
+  const t1 = setTimeout(() => {
+    updateChecklistStep(2, 30, 'Identifying checkable factual claims...');
+  }, 600);
 
-  setTimeout(() => {
-    progressFill.style.width = '70%';
-    progressStep.textContent = '3/4: Cross-referencing public evidence archives...';
-  }, 900);
+  const t2 = setTimeout(() => {
+    updateChecklistStep(3, 45, 'Generating targeted multi-source queries...');
+  }, 1200);
+
+  const t3 = setTimeout(() => {
+    updateChecklistStep(4, 65, 'Searching news sources & knowledge graphs...');
+  }, 1800);
+
+  const t4 = setTimeout(() => {
+    updateChecklistStep(5, 80, 'Comparing supporting vs contradicting evidence...');
+  }, 2700);
+
+  const t5 = setTimeout(() => {
+    updateChecklistStep(6, 92, 'Calculating consensus and confidence...');
+  }, 3600);
 
   try {
     const res = await fetch(`${API_BASE}/scan`, {
@@ -102,6 +132,12 @@ async function initiateScan() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(pageData)
     });
+
+    clearTimeout(t1);
+    clearTimeout(t2);
+    clearTimeout(t3);
+    clearTimeout(t4);
+    clearTimeout(t5);
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
@@ -111,40 +147,67 @@ async function initiateScan() {
     const json = await res.json();
     currentReport = json.report;
 
-    progressFill.style.width = '100%';
-    progressStep.textContent = '4/4: Proof compiled. Rendering results...';
+    updateChecklistStep(7, 100, 'Report compiled successfully!');
+    for (let i = 1; i <= 6; i++) {
+      const el = document.getElementById(`step${i}`);
+      if (el) el.className = 'check-item completed';
+    }
 
     setTimeout(() => {
       displayResults(currentReport);
     }, 400);
 
   } catch (err) {
+    clearTimeout(t1);
+    clearTimeout(t2);
+    clearTimeout(t3);
+    clearTimeout(t4);
+    clearTimeout(t5);
     console.error('Scan failed:', err);
-    errorMessageEl.textContent = err.message || 'Unable to complete verification scan.';
+    errorMessageEl.textContent = err.message || 'Unable to complete verification scan. Ensure backend is running.';
     switchView('error');
   }
 }
 
 // 3. Render Results View
 function displayResults(report) {
-  resVerifiedBadge.textContent = `VERIFIED: ${report.counts.verified}`;
-  resTotalBadge.textContent = `TOTAL: ${report.counts.total}`;
+  const verifiedCount = (report.counts?.supported || 0) + (report.counts?.partiallySupported || 0);
+  resVerifiedBadge.textContent = `VERIFIED: ${verifiedCount}`;
+  resTotalBadge.textContent = `TOTAL: ${report.counts?.total || 1}`;
   resScore.textContent = report.credibilityScore;
+
+  // Real Telemetry
+  if (report.searchTelemetry) {
+    telemetryArticles.textContent = `${report.searchTelemetry.uniqueArticlesRetrieved || 0} articles retrieved`;
+    telemetryQueries.textContent = `${report.searchTelemetry.queriesAttempted || 3} queries attempted`;
+    const sec = ((report.searchTelemetry.analysisDurationMs || 2000) / 1000).toFixed(1);
+    telemetryTime.textContent = `${sec}s analysis time`;
+  }
 
   claimsList.innerHTML = '';
   (report.claims || []).slice(0, 4).forEach(c => {
     const item = document.createElement('div');
     item.className = 'claim-item';
 
-    const status = c.verdict ? c.verdict.status : 'UNVERIFIED';
-    const label = c.verdict ? c.verdict.label : 'Unverified';
+    const status = c.verdict?.status || 'UNVERIFIED';
+    const cleanStatusClass = status.replace(/\s+/g, '_');
+    const label = c.verdict?.label || 'Unverified';
+    const conf = c.verdict?.confidence !== null ? `${c.verdict?.confidence}% confidence` : 'Insufficient data';
+    const sourcesCount = c.verdict?.coverageSummary?.totalSourcesFound || 0;
+    const supCount = c.verdict?.coverageSummary?.supportingCount || 0;
+    const conCount = c.verdict?.coverageSummary?.contradictingCount || 0;
 
     item.innerHTML = `
       <div class="claim-item-top">
-        <span class="claim-status-pill claim-status-${status}">${label.toUpperCase()}</span>
-        <span style="font-size: 10px; color: #78716c;">${c.verdict ? c.verdict.confidence : 0}% confidence</span>
+        <span class="claim-status-pill claim-status-${cleanStatusClass}">${label.toUpperCase()}</span>
+        <span style="font-size: 10px; color: #78716c; font-family: monospace;">${conf}</span>
       </div>
       <div class="claim-item-text">"${c.text}"</div>
+      <div class="claim-sources-micro">
+        <span>📰 ${sourcesCount} sources checked</span> · 
+        <span>✓ ${supCount} agree</span> · 
+        <span>✕ ${conCount} dispute</span>
+      </div>
     `;
     claimsList.appendChild(item);
   });

@@ -66,18 +66,28 @@ export default function CheckNews() {
     }
 
     setLoading(true);
-    setProgressPct(20);
-    setProgressStep('Step 1/4: Extracting article content & author metadata...');
+    setProgressPct(15);
+    setProgressStep('Step 1/6: Extracting article content & author metadata...');
 
-    setTimeout(() => {
+    const t1 = setTimeout(() => {
+      setProgressPct(32);
+      setProgressStep('Step 2/6: Identifying checkable factual claims (English/Gujarati)...');
+    }, 600);
+
+    const t2 = setTimeout(() => {
       setProgressPct(50);
-      setProgressStep('Step 2/4: Identifying checkable factual claims (English/Gujarati)...');
-    }, 800);
+      setProgressStep('Step 3/6: Generating targeted search queries (entities, metrics, context)...');
+    }, 1200);
 
-    setTimeout(() => {
-      setProgressPct(75);
-      setProgressStep('Step 3/4: Querying live public knowledge archives & wire syndicates...');
-    }, 1600);
+    const t3 = setTimeout(() => {
+      setProgressPct(70);
+      setProgressStep('Step 4/6: Searching news sources (NDTV, TOI, IE, Republic, Hindu, PIB)...');
+    }, 1800);
+
+    const t4 = setTimeout(() => {
+      setProgressPct(88);
+      setProgressStep('Step 5/6: Comparing supporting vs contradicting evidence excerpts...');
+    }, 2800);
 
     try {
       const payload = inputMode === 'url'
@@ -90,13 +100,22 @@ export default function CheckNews() {
 
       const report = await proofDeskService.scan(payload);
 
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
+
       setProgressPct(100);
-      setProgressStep('Step 4/4: Verification compiled. Generating reference check...');
+      setProgressStep('Step 6/6: Verification compiled. Rendering multi-source report...');
 
       setTimeout(() => {
         navigate(`/result/${report.id}`);
       }, 500);
     } catch (err) {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      clearTimeout(t4);
       setError(err.message || 'Verification failed. Please check the network or backend.');
       setLoading(false);
     }

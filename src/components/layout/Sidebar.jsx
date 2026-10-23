@@ -1,5 +1,6 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { VeriScopeLogo } from '../common/VeriScopeLogo';
 import './Sidebar.css';
 
 const SECTIONS = [
@@ -37,8 +38,7 @@ export const Sidebar = ({ open, onClose }) => {
       <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
         <div className="sidebar-header">
           <NavLink to="/dashboard" className="sidebar-brand-link">
-            <span className="sidebar-brand-name">Crosscheck</span>
-            <span className="sidebar-brand-sub">THE MERIDIAN · PROOF DESK</span>
+            <VeriScopeLogo size={32} showWordmark={true} />
           </NavLink>
         </div>
 

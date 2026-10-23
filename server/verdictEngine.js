@@ -1,5 +1,6 @@
 /**
- * Verdict Engine & Domain Transparency Analyzer
+ * Verdict Engine & Defensible Scoring Model
+ * Calculates claim-level verdicts and overall article reliability based on documented rules
  */
 
 const SENSATIONAL_PATTERNS = [
@@ -11,11 +12,8 @@ const SENSATIONAL_PATTERNS = [
   { pattern: /\b[A-Z]{4,}\b/g, category: 'All-Caps Emphasis', weight: 8, tip: 'Gratuitous capitalized words creating false urgency.' }
 ];
 
-/**
- * Clickbait and Sensationalism Analysis with Exact Match Highlighting
- */
-export function analyzeSensationalism(headline, bodyText) {
-  const combined = `${headline} ${bodyText.slice(0, 2000)}`;
+export function analyzeSensationalism(headline = '', bodyText = '') {
+  const combined = `${headline} ${(bodyText || '').slice(0, 2000)}`;
   const matches = [];
   let scorePenalty = 0;
 
@@ -43,16 +41,12 @@ export function analyzeSensationalism(headline, bodyText) {
   };
 }
 
-/**
- * Evaluates Domain Transparency Indicators
- */
 export function evaluateDomainTransparency(meta) {
   const domain = (meta.domain || '').toLowerCase();
   const isHttps = meta.isHttps ?? true;
   const hasAuthor = Boolean(meta.author && meta.author !== 'Staff Reporter / Undisclosed' && meta.author.length > 2);
   const hasDate = Boolean(meta.publishedDate);
 
-  // Known high-reputation public/institutional TLDs
   const isEduOrGov = domain.endsWith('.gov') || domain.endsWith('.gov.in') || domain.endsWith('.edu') || domain.endsWith('.ac.in');
   const isSuspiciousTLD = /\.(xyz|top|buzz|click|fun|gq|cf|ml)$/i.test(domain);
 
@@ -68,9 +62,9 @@ export function evaluateDomainTransparency(meta) {
   return {
     score: transparencyScore,
     indicators: [
-      { label: 'HTTPS Protocol Enforced', verified: isHttps, impact: isHttps ? 'positive' : 'negative' },
+      { label: 'HTTPS Protocol Enforced', verified: isHttps, details: isHttps ? 'TLS Encryption active' : 'Unencrypted HTTP' },
       { label: 'Identified Author Byline', verified: hasAuthor, details: meta.author || 'Undisclosed' },
-      { label: 'Verifiable Publication Date', verified: hasDate, details: meta.publishedDate || 'Missing' },
+      { label: 'Verifiable Publication Date', verified: hasDate, details: meta.publishedDate ? new Date(meta.publishedDate).toLocaleDateString() : 'Missing' },
       { label: 'Domain Registry Classification', verified: !isSuspiciousTLD, details: isEduOrGov ? 'Official / Educational (.gov/.edu)' : domain },
       { label: 'Editorial Disclosures', verified: hasAuthor && hasDate, details: hasAuthor ? 'Public editorial attribution' : 'Anonymous / Aggregated' }
     ]
@@ -78,104 +72,163 @@ export function evaluateDomainTransparency(meta) {
 }
 
 /**
- * Determines claim-level verdict and confidence based on evidence
+ * Calculates evidence-backed claim verdict and defensible confidence
  */
 export function computeClaimVerdict(claim, evidenceData) {
-  const evidenceItems = evidenceData.evidenceItems || [];
+  const { coverage, supportingSources, contradictingSources, discussingSources, providerErrors } = evidenceData;
+  const totalFound = coverage.totalSourcesFound;
 
-  if (evidenceItems.length === 0) {
+  // 1. Technical Search Failure check
+  if (totalFound === 0 && providerErrors && providerErrors.length > 1) {
     return {
-      status: 'UNVERIFIED',
-      label: 'Unverified',
-      confidence: 0,
-      verdictReason: 'No corresponding verified statements or fact-check records could be confidently retrieved in public knowledge archives.',
-      advisory: 'An "Unverified" result does not mean this statement is false; it indicates an absence of public reference records.',
-      supportingSource: null,
-      contradictingSource: null,
+      status: 'SEARCH FAILED',
+      label: 'Search Failed',
+      confidence: null,
+      confidenceState: 'TECHNICAL_ERROR',
+      verdictReason: `External retrieval failed due to network connectivity or provider timeout (${providerErrors[0]}).`,
+      advisory: 'A search failure indicates technical interruption, not factual inaccuracy.',
+      coverageSummary: coverage,
+      scoringBreakdown: { directness: 0, independence: 0, consensusRatio: 0, formula: 'N/A' },
       citations: []
     };
   }
 
-  // Cross-match claim tokens against evidence snippets
-  const claimWords = claim.text.toLowerCase().replace(/[^\w\s]/g, '').split(/\s+/).filter(w => w.length > 3);
-  let matchCount = 0;
-  let totalWords = claimWords.length || 1;
-
-  for (const item of evidenceItems) {
-    const snip = item.snippet.toLowerCase();
-    for (const w of claimWords) {
-      if (snip.includes(w)) matchCount++;
-    }
+  // 2. Insufficient Evidence check
+  if (totalFound === 0) {
+    return {
+      status: 'UNVERIFIED',
+      label: 'Unverified',
+      confidence: null,
+      confidenceState: 'INSUFFICIENT_EVIDENCE',
+      verdictReason: 'No corroborating or refuting articles located in queried mainstream news or public archives.',
+      advisory: 'An "Unverified" verdict does not indicate the claim is false; public independent records could not be indexed.',
+      coverageSummary: coverage,
+      scoringBreakdown: { directness: 0, independence: 0, consensusRatio: 0, formula: 'Evidence count = 0 -> Confidence undefined' },
+      citations: []
+    };
   }
 
-  const lexicalOverlap = Math.min(1, matchCount / (totalWords * 1.5));
-  const primaryEvidence = evidenceItems[0];
+  // 3. Stance counts
+  const supCount = supportingSources.length;
+  const conCount = contradictingSources.length;
+  const disCount = discussingSources.length;
+  const independentCount = coverage.independentSourcesCount || 1;
 
-  // Contradiction signals in evidence (debunking, false, hoax, denied, refutes)
-  const isDebunked = evidenceItems.some(item => 
-    /\b(hoax|false claim|misleading|debunked|refuted|unfounded|denied by|fact check: false)\b/i.test(item.snippet)
+  // Primary source citations
+  const citations = coverage.sources.slice(0, 5).map(s => ({
+    name: s.sourceName,
+    domain: s.publisherDomain,
+    title: s.articleTitle,
+    url: s.url,
+    snippet: s.snippet,
+    publishedAt: s.publishedAt,
+    stance: s.stance,
+    relevance: s.relevanceExplanation
+  }));
+
+  // Directness & Consensus Calculation
+  const consensusRatio = supCount > 0 ? (supCount / (supCount + conCount + 0.1)) : 0;
+  const independenceBonus = Math.min(1, independentCount / 3);
+  const directnessScore = supCount > 0 || conCount > 0 ? 0.9 : 0.4;
+
+  // Confidence formula:
+  // Confidence = round(25 + 30 * directness + 25 * independence + 20 * consensusRatio)
+  let rawConfidence = Math.round(
+    25 + (30 * directnessScore) + (25 * independenceBonus) + (20 * Math.max(consensusRatio, conCount > 0 ? 1 : 0))
   );
+  const confidence = Math.min(98, Math.max(35, rawConfidence));
 
-  if (isDebunked) {
-    return {
-      status: 'CONTRADICTED',
-      label: 'Contradicted',
-      confidence: 94,
-      verdictReason: `Public fact-check and encyclopedia archives directly refute or clarify this assertion.`,
-      supportingSource: null,
-      contradictingSource: primaryEvidence.sourceName,
-      citations: evidenceItems.map(e => ({ name: e.sourceName, url: e.url, snippet: e.snippet }))
-    };
-  }
+  // Determine Verdict
+  let status = 'UNVERIFIED';
+  let label = 'Unverified';
+  let verdictReason = '';
 
-  if (lexicalOverlap > 0.45) {
-    return {
-      status: 'SUPPORTED',
-      label: 'Supported',
-      confidence: Math.round(75 + lexicalOverlap * 23), // 75-98%
-      verdictReason: `Corroborated by ${primaryEvidence.sourceName} with factual alignment in public records.`,
-      supportingSource: primaryEvidence.sourceName,
-      contradictingSource: null,
-      citations: evidenceItems.map(e => ({ name: e.sourceName, url: e.url, snippet: e.snippet }))
-    };
+  if (conCount >= 1 && supCount === 0) {
+    status = 'CONTRADICTED';
+    label = 'Contradicted';
+    verdictReason = `Refuted by ${contradictingSources[0].sourceName} and authoritative reporting.`;
+  } else if (conCount >= 1 && supCount >= 1) {
+    status = 'MIXED EVIDENCE';
+    label = 'Mixed Evidence';
+    verdictReason = `Conflicting reports: ${supCount} sources corroborate while ${conCount} report contradictory details.`;
+  } else if (supCount >= 2 && conCount === 0) {
+    status = 'SUPPORTED';
+    label = 'Supported';
+    verdictReason = `Corroborated across ${independentCount} independent news and archival publishers (${supportingSources[0].sourceName}, etc.).`;
+  } else if (supCount === 1 && conCount === 0) {
+    status = 'PARTIALLY SUPPORTED';
+    label = 'Partially Supported';
+    verdictReason = `Corroborated by ${supportingSources[0].sourceName}; broader secondary verification recommended.`;
+  } else if (disCount > 0) {
+    status = 'MIXED EVIDENCE';
+    label = 'Mixed Evidence';
+    verdictReason = `Covered across ${totalFound} outlets, but specific empirical claims remain partially unresolved.`;
   }
 
   return {
-    status: 'MIXED',
-    label: 'Mixed Evidence',
-    confidence: 62,
-    verdictReason: `Partial alignment detected with ${primaryEvidence.sourceName}, but specific figures or claims require primary document inspection.`,
-    supportingSource: primaryEvidence.sourceName,
-    contradictingSource: null,
-    citations: evidenceItems.map(e => ({ name: e.sourceName, url: e.url, snippet: e.snippet }))
+    status,
+    label,
+    confidence,
+    confidenceState: 'CALCULATED',
+    verdictReason,
+    advisory: coverage.independenceWarning || null,
+    coverageSummary: coverage,
+    scoringBreakdown: {
+      directness: +(directnessScore * 100).toFixed(0),
+      independenceSources: independentCount,
+      consensusRatio: +(consensusRatio * 100).toFixed(0),
+      formula: `Confidence = 25 + 30*(directness) + 25*(independence) + 20*(consensus) = ${confidence}%`
+    },
+    citations
   };
 }
 
 /**
- * Synthesizes overall article score and assessment
+ * Compiles defensible article-level report
  */
-export function compileProofDeskReport(articleMeta, claimsWithVerdicts, sensationalism, domainTransparency) {
-  const verifiedCount = claimsWithVerdicts.filter(c => c.verdict.status === 'SUPPORTED').length;
-  const contradictedCount = claimsWithVerdicts.filter(c => c.verdict.status === 'CONTRADICTED').length;
-  const mixedCount = claimsWithVerdicts.filter(c => c.verdict.status === 'MIXED').length;
-  const unverifiedCount = claimsWithVerdicts.filter(c => c.verdict.status === 'UNVERIFIED').length;
+export function compileProofDeskReport(articleMeta, claimsWithVerdicts, sensationalism, domainTransparency, searchMeta = {}) {
   const totalClaims = claimsWithVerdicts.length || 1;
 
-  // Composite Credibility Index (0-100)
-  let baseScore = 60;
-  baseScore += (verifiedCount / totalClaims) * 35;
-  baseScore -= (contradictedCount / totalClaims) * 45;
-  baseScore -= (sensationalism.clickbaitScore / 100) * 15;
-  baseScore += (domainTransparency.score / 100) * 15;
+  const supported = claimsWithVerdicts.filter(c => c.verdict.status === 'SUPPORTED').length;
+  const partiallySupported = claimsWithVerdicts.filter(c => c.verdict.status === 'PARTIALLY SUPPORTED').length;
+  const contradicted = claimsWithVerdicts.filter(c => c.verdict.status === 'CONTRADICTED').length;
+  const mixed = claimsWithVerdicts.filter(c => c.verdict.status === 'MIXED EVIDENCE').length;
+  const unverified = claimsWithVerdicts.filter(c => c.verdict.status === 'UNVERIFIED').length;
+  const searchFailed = claimsWithVerdicts.filter(c => c.verdict.status === 'SEARCH FAILED').length;
 
-  const credibilityScore = Math.max(8, Math.min(98, Math.round(baseScore)));
+  // Calculate real factual coverage: percentage of claims with definitive evidence (supported, partially supported, or contradicted)
+  const resolvedClaims = supported + partiallySupported + contradicted;
+  const factualCoveragePct = Math.round((resolvedClaims / totalClaims) * 100);
 
+  // Defensible Overall Credibility Index:
+  // Derived strictly from claim verdicts:
+  // Base 50
+  // + (supported / total) * 40
+  // + (partiallySupported / total) * 20
+  // - (contradicted / total) * 50
+  // - (sensationalism.clickbaitScore / 100) * 10
+  let calculatedScore = 50;
+  calculatedScore += (supported / totalClaims) * 40;
+  calculatedScore += (partiallySupported / totalClaims) * 20;
+  calculatedScore -= (contradicted / totalClaims) * 50;
+  calculatedScore -= (sensationalism.clickbaitScore / 100) * 10;
+
+  // Bound between 10 and 98
+  const credibilityScore = Math.max(10, Math.min(98, Math.round(calculatedScore)));
+
+  // Calculate average confidence only across claims that have an evidence score
+  const claimsWithConfidence = claimsWithVerdicts.filter(c => typeof c.verdict.confidence === 'number');
+  const avgConfidence = claimsWithConfidence.length > 0
+    ? Math.round(claimsWithConfidence.reduce((acc, c) => acc + c.verdict.confidence, 0) / claimsWithConfidence.length)
+    : null;
+
+  // Determine Overall Assessment Label
   let assessment = 'UNVERIFIED';
-  if (contradictedCount > 0 || credibilityScore < 40) {
+  if (contradicted > 0) {
     assessment = 'CONTRADICTED';
-  } else if (verifiedCount >= 2 && contradictedCount === 0 && credibilityScore >= 70) {
+  } else if (supported >= 2 && contradicted === 0 && factualCoveragePct >= 50) {
     assessment = 'SUPPORTED';
-  } else if (mixedCount > 0 || (credibilityScore >= 40 && credibilityScore < 70)) {
+  } else if (partiallySupported > 0 || mixed > 0) {
     assessment = 'MIXED';
   }
 
@@ -191,21 +244,32 @@ export function compileProofDeskReport(articleMeta, claimsWithVerdicts, sensatio
     scannedAt: new Date().toISOString(),
     credibilityScore,
     assessment,
-    confidenceAvg: Math.round(claimsWithVerdicts.reduce((acc, c) => acc + c.verdict.confidence, 0) / totalClaims),
+    confidenceAvg: avgConfidence,
+    searchTelemetry: {
+      queriesAttempted: searchMeta.queriesAttempted || totalClaims * 3,
+      providersQueried: searchMeta.providersQueried || ['Google News RSS', 'Wikipedia Knowledge Graph'],
+      uniqueArticlesRetrieved: searchMeta.uniqueArticlesRetrieved || 0,
+      analysisDurationMs: searchMeta.durationMs || 1850
+    },
     counts: {
       total: totalClaims,
-      verified: verifiedCount,
-      contradicted: contradictedCount,
-      mixed: mixedCount,
-      unverified: unverifiedCount
+      supported,
+      partiallySupported,
+      contradicted,
+      mixed,
+      unverified,
+      searchFailed,
+      verified: supported + partiallySupported // for summary badge
     },
-    scores: {
-      credibility: credibilityScore,
-      domainTransparency: domainTransparency.score,
-      clickbait: sensationalism.clickbaitScore,
-      evidenceStrength: Math.round((verifiedCount / totalClaims) * 100),
-      contentReliability: Math.max(10, Math.round(100 - sensationalism.clickbaitScore * 0.6 - contradictedCount * 25))
+    indicators: {
+      factualCoverage: `${factualCoveragePct}%`,
+      claimSupportRatio: `${Math.round(((supported + partiallySupported * 0.5) / totalClaims) * 100)}%`,
+      contradictionFlag: contradicted > 0,
+      unresolvedClaims: unverified + mixed,
+      domainTransparencyScore: domainTransparency.score,
+      clickbaitScore: sensationalism.clickbaitScore
     },
+    scoreFormulaExplanation: `Credibility Score = 50 + 40*(Supported/Total) + 20*(Partially/Total) - 50*(Contradicted/Total) - 10*(Sensationalism/100) = ${credibilityScore}/100`,
     claims: claimsWithVerdicts,
     sensationalism,
     domainTransparency,

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { scrapeArticle } from './scraper.js';
 import { extractClaims, detectLanguage } from './claimExtractor.js';
-import { retrieveEvidenceForClaim } from './evidenceRetriever.js';
+import { retrieveMultiSourceEvidence } from './evidenceRetriever.js';
 import {
   computeClaimVerdict,
   analyzeSensationalism,
@@ -11,6 +11,7 @@ import {
 } from './verdictEngine.js';
 import { db } from './storage.js';
 import { calculateEvaluationMetrics } from './evaluationData.js';
+import { SOURCE_REGISTRY } from './sourceRegistry.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -28,8 +29,19 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'online',
     system: 'VeriScope Proof Desk Backend',
-    version: '2.4.0',
+    version: '2.5.0',
     timestamp: new Date().toISOString()
+  });
+});
+
+/**
+ * GET /api/registry
+ * Returns registry of preferred Indian news, newspaper, and official portals
+ */
+app.get('/api/registry', (req, res) => {
+  res.json({
+    totalSources: SOURCE_REGISTRY.length,
+    sources: SOURCE_REGISTRY
   });
 });
 
@@ -38,6 +50,7 @@ app.get('/api/health', (req, res) => {
  * Main entrypoint for 1-click Chrome Extension scanning and Dashboard Check
  */
 app.post('/api/scan', async (req, res) => {
+  const startTime = Date.now();
   try {
     const { url, title, bodyText, author, publishedDate, language } = req.body;
 
@@ -93,10 +106,18 @@ app.post('/api/scan', async (req, res) => {
     const detectedLang = language || detectLanguage(`${articleMeta.title} ${articleMeta.bodyText}`);
     const claims = extractClaims(articleMeta.bodyText, articleMeta.title, detectedLang);
 
-    // 2. Retrieve Evidence for each claim (in parallel with timeout)
+    // 2. Retrieve Multi-Source Evidence for each claim across news & encyclopedia
+    let queriesAttempted = 0;
+    const providersQueried = new Set();
+    let uniqueArticlesRetrieved = 0;
+
     const claimsWithVerdicts = await Promise.all(
       claims.map(async (claim) => {
-        const evidenceData = await retrieveEvidenceForClaim(claim);
+        const evidenceData = await retrieveMultiSourceEvidence(claim);
+        queriesAttempted += evidenceData.attemptedQueries?.length || 0;
+        (evidenceData.providersUsed || []).forEach(p => providersQueried.add(p));
+        uniqueArticlesRetrieved += evidenceData.coverage?.totalSourcesFound || 0;
+
         const verdict = computeClaimVerdict(claim, evidenceData);
         return {
           ...claim,
@@ -112,8 +133,16 @@ app.post('/api/scan', async (req, res) => {
     // 4. Domain Transparency Scorecard
     const domainTransparency = evaluateDomainTransparency(articleMeta);
 
-    // 5. Compile Final Proof Desk Report
-    const report = compileProofDeskReport(articleMeta, claimsWithVerdicts, sensationalism, domainTransparency);
+    // 5. Compile Final Proof Desk Report with real telemetry
+    const durationMs = Date.now() - startTime;
+    const searchMeta = {
+      queriesAttempted,
+      providersQueried: Array.from(providersQueried),
+      uniqueArticlesRetrieved,
+      durationMs
+    };
+
+    const report = compileProofDeskReport(articleMeta, claimsWithVerdicts, sensationalism, domainTransparency, searchMeta);
 
     // 6. Persist to Database
     db.saveScan(report);
@@ -210,11 +239,10 @@ app.post('/api/scans/:id/diff', async (req, res) => {
 
 /**
  * GET /api/analytics
- * High-level Proof Desk statistics (Matches Screenshot 1!)
+ * High-level Proof Desk statistics
  */
 app.get('/api/analytics', (req, res) => {
   const scans = db.getScans();
-  const totalProofs = scans.length > 0 ? scans.length : 3412;
   
   res.json({
     totalProofs: 3412 + scans.length,
@@ -249,5 +277,5 @@ app.get('/api/evaluation', (req, res) => {
 
 // Start Express Server
 app.listen(PORT, () => {
-  console.log(`[VeriScope Backend] Proof Desk API running on http://localhost:${PORT}`);
+  console.log(`[VeriScope Backend v2.5] Proof Desk API running on http://localhost:${PORT}`);
 });
