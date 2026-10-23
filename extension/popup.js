@@ -24,6 +24,7 @@ const resScore = document.getElementById('resScore');
 const claimsList = document.getElementById('claimsList');
 const openReportBtn = document.getElementById('openReportBtn');
 const highlightBtn = document.getElementById('highlightBtn');
+const clearHighlightBtn = document.getElementById('clearHighlightBtn');
 const telemetryStrip = document.getElementById('telemetryStrip');
 const telemetryArticles = document.getElementById('telemetryArticles');
 const telemetryQueries = document.getElementById('telemetryQueries');
@@ -223,20 +224,37 @@ openReportBtn.addEventListener('click', () => {
   }
 });
 
-// 5. Highlight Claims in Page
+// 5. Highlight Heading & Key Claims in Page
 highlightBtn.addEventListener('click', async () => {
-  if (currentActiveTab && currentReport && currentReport.claims) {
+  if (currentActiveTab && currentReport) {
     try {
       await chrome.tabs.sendMessage(currentActiveTab.id, {
         action: 'HIGHLIGHT_CLAIMS',
-        claims: currentReport.claims
+        report: currentReport
       });
-      highlightBtn.textContent = '✓ Claims Highlighted in Page';
+      highlightBtn.textContent = '✓ Highlights Applied';
       setTimeout(() => {
-        highlightBtn.textContent = 'Highlight Claims in Page';
+        highlightBtn.textContent = 'Highlight Heading & Key Claims';
       }, 2500);
     } catch (e) {
       alert('Could not highlight directly on this page.');
+    }
+  }
+});
+
+// 6. Cancel & Clear In-Page Highlights
+clearHighlightBtn.addEventListener('click', async () => {
+  if (currentActiveTab) {
+    try {
+      await chrome.tabs.sendMessage(currentActiveTab.id, {
+        action: 'CLEAR_HIGHLIGHTS'
+      });
+      clearHighlightBtn.textContent = '✓ Cleared';
+      setTimeout(() => {
+        clearHighlightBtn.textContent = '✕ Clear';
+      }, 2000);
+    } catch (e) {
+      // Content script may not be present
     }
   }
 });

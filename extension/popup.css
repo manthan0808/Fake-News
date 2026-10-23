@@ -183,6 +183,28 @@ body {
   width: 100%;
 }
 
+.highlight-actions-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.btn-cancel-highlight {
+  color: #b91c1c;
+  border-color: #fca5a5;
+  background-color: #fef2f2;
+  padding: 8px 10px;
+}
+
+.btn-cancel-highlight:hover {
+  background-color: #fee2e2;
+  border-color: #f87171;
+}
+
 /* Progress State & Checklist (Task 7) */
 .progress-container {
   padding: 12px 4px;
